@@ -1,4 +1,3 @@
+# منع جميع محركات البحث من فهرسة/أرشفة الموقع كاملاً (حماية المعلومات الشخصية)
 User-agent: *
-Allow: /
-
-Sitemap: https://ahmedmahsoup1920-stack.github.io/gis-app-web/sitemap.xml
+Disallow: /

@@ -1,3 +1,4 @@
-# Block all search engines from indexing/archiving this site (personal data protection)
 User-agent: *
-Disallow: /
+Allow: /
+
+Sitemap: https://geo-spatial-app.github.io/gis-app-web/sitemap.xml

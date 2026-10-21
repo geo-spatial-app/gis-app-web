@@ -773,6 +773,111 @@
         #tab-tools .draw-tool-btn.active { background:#e8973a; color:#fff; border-color:#e8973a; box-shadow:0 2px 10px rgba(232,151,58,.4); }
     </style>
     <link rel="stylesheet" href="js/gis-command-center.css?v=giswater" />
+    <style>
+        /* ============================================================
+           Phase A · طبقة تصحيح التخطيط والتداخل (Layout Correction Layer)
+           تُحمَّل أخيراً لتتجاوز القواعد السابقة بأمان دون تعديلها.
+           لا تمسّ أي وظيفة GIS — CSS فقط.
+           ============================================================ */
+        :root {
+            /* نظام z-index موحّد ومُصعَّد بفواصل واضحة لمنع التداخل */
+            --z-map:                1;
+            --z-map-controls:       400;
+            --z-floating-panels:    500;   /* measurePanel / coordPanel */
+            --z-sidebar:            1500;
+            --z-dock:               1501;
+            --z-advtoc:             2000;
+            --z-advtoc-handle:      1999;  /* أقل من اللوحة حتى لا يغطّيها */
+            --z-context-menu:       2100;
+            --z-modal:              6200;  /* أعلى من advToc حتى لا تختفي تحته */
+            --z-control-panel:      6300;
+            --z-3d:                 7000;
+            --z-module-panel:       9998;
+            --z-toast:             10050;
+            --z-login:             11000;
+        }
+
+        /* ---- 1) توحيد إزاحة الأعلى بين اللوحة والشريط ولوحة الطبقات ---- */
+        .sidebar { top: calc(var(--app-top) + 6px) !important; }
+        #sideDock { top: calc(var(--app-top) + 6px); }
+
+        /* ---- 2) اللوحة الجانبية: إتاحة ظهور مقبض التحجيم ---- */
+        /* overflow:hidden كان يقصّ .gis-side-resize عبر الحافة.
+           نسمح بالظهور رأسياً/أفقياً مع إبقاء تقييد التمرير على المحتوى الداخلي. */
+        .sidebar { overflow: visible !important; }
+        .sidebar .side-head,
+        .sidebar .tabs,
+        .sidebar .content { border-radius: 0; }
+        .sidebar .content { border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; }
+        /* الحفاظ على التقويس عند السماح بالظهور */
+        .sidebar > *:first-child { border-top-left-radius: 16px; border-top-right-radius: 16px; }
+        /* مقبض التحجيم يبقى داخل حدود اللوحة المرئية */
+        .gis-side-resize { right: 0; border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+        body.gis-cc.cc-side-right .gis-side-resize { right: auto; left: 0; }
+
+        /* ---- 3) تداخل لوحتي القياس والإحداثيات (نفس الموضع ونفس z) ---- */
+        /* ترتيب DOM: #measurePanel ثم #coordPanel ⇒ نستخدم ~ لتكديسهما رأسياً.
+           القياس في الأسفل، والإحداثيات ترتفع فوقه عند ظهور الاثنين. */
+        #measurePanel { z-index: 520; }
+        #coordPanel   { z-index: 510; max-height: 42vh; }
+        #measurePanel.show ~ #coordPanel { bottom: calc(80px + 230px + var(--sab)); }
+
+        /* ---- 4) مقبض لوحة الطبقات المتقدمة (Advanced TOC) ---- */
+        #advTocHandle { z-index: 1999; }
+        #advToc { z-index: 2000; }
+        /* القاعدة القديمة `#advToc.open ~ #advTocHandle` لا تعمل (ترتيب DOM).
+           نستعمل صنف body يُضاف من JS عند فتح/إغلاق اللوحة. */
+        body.advtoc-open #advTocHandle { right: calc(340px + 12px + var(--sar)); }
+        @media (max-width:768px) {
+            body.advtoc-open #advTocHandle { right: calc(min(330px, 88vw) + 10px + var(--sar)); }
+        }
+
+        /* ---- 5) تصعيد النوافذ المنبثقة فوق لوحة الطبقات ---- */
+        .modal-overlay { z-index: 6200; }
+        .control-panel-overlay { z-index: 6300; }
+        #view3DOverlay { z-index: 7000; }
+        #loginScreen { z-index: 11000; }
+
+        /* ---- 6) زر تثبيت PWA/tip: لا يغطّي محتوى اللوحة ---- */
+        /* ننقله أسفل-يمين (بعيداً عن اللوحة العائمة يسار) */
+        #installAppBtn { left: auto !important; right: 16px; bottom: 16px; }
+
+        /* ---- 7) مواءمة مسار الموبايل مع النقطة الموحّدة 520px ---- */
+        @media (max-width:520px) {
+            /* تحديث قواعد اللوحة القديمة (768px) لتتوافق مع الشريط العائم */
+            .sidebar {
+                position: fixed !important;
+                top: var(--app-top) !important;
+                left: 0; right: auto;
+                width: min(320px, 90vw); max-width: min(320px, 90vw);
+                height: calc(var(--vh) - var(--app-top));
+                max-height: calc(var(--vh) - var(--app-top));
+                border-radius: 0 16px 16px 0;
+                transform: translateX(calc(-100% - 26px));
+                opacity: 0; pointer-events: none;
+            }
+            .sidebar.collapsed { transform: translateX(calc(-100% - 26px)); opacity: 0; pointer-events: none; }
+            body:not(.gis-cc) .sidebar:not(.collapsed),
+            body.gis-cc .sidebar:not(.collapsed) { transform: translateX(0); opacity: 1; pointer-events: auto; }
+            #sideDock { top: calc(var(--app-top) + 8px); left: 10px; }
+            .menu-toggle { display: flex; }
+            .overlay { display: block; }
+            #measurePanel, #coordPanel {
+                left: calc(10px + var(--sal));
+                bottom: calc(66px + var(--sab));
+                min-width: 170px;
+                max-width: min(240px, 72vw);
+            }
+            /* تجنّب تغطية زر التثبيت للوحة على الموبايل */
+            #installAppBtn { right: 10px; bottom: 10px; padding: 9px 12px; }
+        }
+
+        /* ---- 8) الاستعلام القديم (768px) كان يعلّق اللوحة fixed دائماً؛ نُلغي أثره على سطح المكتب ---- */
+        @media (min-width:521px) {
+            .sidebar { right: auto; }
+            .overlay { display: none !important; }
+        }
+    </style>
 </head>
 <body>
 
@@ -5226,10 +5331,23 @@
     const sideDock = document.getElementById('sideDock');
     let activeTab = 'locations';
 
+    // إعادة حساب أبعاد الخريطة بعد أي تغيير في اللوحة (طي/فتح/تحجيم)
+    function refitMapSoon() {
+        if (typeof map === 'undefined' || !map) return;
+        const run = () => { try { map.invalidateSize({ pan: false }); } catch (_) {} };
+        run();
+        setTimeout(run, 350);
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => requestAnimationFrame(run));
+        }
+    }
+    window.__gisRefitMap = refitMapSoon;
+
     function setSidePanel(open, tab) {
         if (typeof tab === 'string') { activeTab = tab; switchTab(tab); }
         sidebar.classList.toggle('collapsed', !open);
         sideDock.classList.toggle('hidden', open);
+        refitMapSoon();
     }
     const sideCollapse = document.getElementById('sideCollapse');
     if (sideCollapse) sideCollapse.addEventListener('click', () => setSidePanel(false));
@@ -5564,6 +5682,7 @@
         // الخريطة تُهيَّأ أثناء إخفاء الحاوية، لذا نعيد حساب أبعادها بعد الظهور بشكل متكرر
         // (بما في ذلك بعد تحميل الخطوط) حتى لا تنزاح الطبقات/الرسومات عن أماكنها مع حركة الماوس
         const refitMap = () => { if (typeof map !== 'undefined' && map) { try { map.invalidateSize({ pan: false }); } catch (_) {} } };
+        window.__gisRefitMap = refitMap;
         try { localStorage.setItem('gisEntered', '1'); } catch (_) {}
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appRoot').style.display = 'flex';
@@ -6100,8 +6219,8 @@ const items = [
             });
         }
 
-        function open() { const p = $('advToc'); if (p) p.classList.add('open'); render(); }
-        function close() { const p = $('advToc'); if (p) p.classList.remove('open'); closeMenu(); }
+        function open() { const p = $('advToc'); if (p) p.classList.add('open'); document.body.classList.add('advtoc-open'); render(); }
+        function close() { const p = $('advToc'); if (p) p.classList.remove('open'); document.body.classList.remove('advtoc-open'); closeMenu(); }
         function toggle() { const p = $('advToc'); if (p && p.classList.contains('open')) close(); else open(); }
 
         function init() {

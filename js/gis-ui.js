@@ -437,6 +437,7 @@
                 save();
                 apply();
                 syncPanelUI();
+                try { if (typeof window.__gisRefitMap === 'function') { window.__gisRefitMap(); } } catch (_) {}
                 notify('عرض اللوحة: ' + Math.round(live) + 'px', 'success');
             }
             window.addEventListener('pointermove', move);

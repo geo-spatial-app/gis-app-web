@@ -6,7 +6,7 @@
       ويعمل بدون إنترنت عند انقطاعه.
    ================================================================ */
 
-const VERSION = 'gis-water-v41';
+const VERSION = 'gis-water-v42';
 const CACHE = VERSION + '-cache';
 
 /* ملفات التطبيق الأساسية (نخزّنها عند التثبيت) */
@@ -95,6 +95,24 @@ self.addEventListener('fetch', function (event) {
     const url = new URL(req.url);
     if (url.pathname.indexOf('/media/') !== -1) { return; }
 
+    // نتجاهل الطلبات العابرة للنطاقات (Google OAuth / Supabase / CDN) — نتركها للمتصفح
+    if (url.origin !== self.location.origin) { return; }
+
+    // طلبات التنقّل (فتح الصفحة / العودة من OAuth): نجلب دائماً من الشبكة
+    // بدون كاش HTTP لضمان عدم حبس المستخدم في نسخة HTML قديمة.
+    if (req.mode === 'navigate') {
+        event.respondWith(
+            fetch(req, { cache: 'no-store' })
+                .then(function (res) { return res; })
+                .catch(function () {
+                    return caches.match('./index.html').then(function (page) {
+                        return page || new Response('', { status: 504, statusText: 'Offline' });
+                    });
+                })
+        );
+        return;
+    }
+
     event.respondWith(
         fetch(req)
             .then(function (res) {
@@ -111,19 +129,6 @@ self.addEventListener('fetch', function (event) {
                 // لا يوجد إنترنت — نرجع من الكاش
                 return caches.match(req).then(function (cached) {
                     if (cached) { return cached; }
-                    //في حالة导航 نرجع الصفحة الرئيسية
-                    if (req.mode === 'navigate') {
-                        return caches.match('./index.html').then(function (page) {
-                            return page || new Response(
-                                '<!doctype html><meta charset="utf-8">' +
-                                '<body style="font-family:sans-serif;text-align:center;padding:40px;" dir="rtl">' +
-                                '<h2>لا يوجد اتصال بالإنترنت</h2>' +
-                                '<p>افتح التطبيق مرة واحدة وحينها سيعمل بدون إنترنت.</p>' +
-                                '</body>',
-                                { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-                            );
-                        });
-                    }
                     return new Response('', { status: 504, statusText: 'Offline' });
                 });
             })

@@ -5704,13 +5704,57 @@
         if (errEl) errEl.textContent = '';
         const btn = this;
         const C = window.GIS && window.GIS.cloud;
-        if (C && typeof C.signInWithOAuth === 'function') {
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ التحويل إلى Google…';
-            setTimeout(function () { btn.innerHTML = orig; }, 6000);
-            C.signInWithOAuth('google');
-        } else if (typeof window.showToast === 'function') {
-            window.showToast('تعذّر بدء تسجيل الدخول — اضبط إعدادات السحابة أولًا', 'error', 5200);
+        if (!(C && typeof C.signInWithOAuth === 'function')) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('تعذّر بدء تسجيل الدخول — اضبط إعدادات السحابة أولًا', 'error', 5200);
+            }
+            return;
+        }
+
+        const orig = btn.innerHTML;
+        let restored = false;
+        let navigated = false;
+        const restore = function () {
+            if (restored) { return; }
+            restored = true;
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        };
+        // نمنع التحميل اللانهائي: إن لم يحدث انتقال فعلي تُستعاد الحالة مع رسالة واضحة
+        const guard = setTimeout(function () {
+            if (navigated) { return; }
+            restore();
+            if (errEl) { errEl.textContent = 'لم يكتمل التحويل إلى Google. قد يكون الاتصال بطيئًا أو مانع نوافذ فعّالًا — أعد المحاولة.'; }
+            if (typeof window.showToast === 'function') {
+                window.showToast('لم يبدأ التحويل إلى Google — أعد المحاولة أو تحقّق من اتصالك', 'error', 6000);
+            }
+        }, 9000);
+
+        const marks = function () { navigated = true; clearTimeout(guard); };
+        window.addEventListener('beforeunload', marks);
+        document.addEventListener('visibilitychange', function () { if (document.hidden) { marks(); } });
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جارٍ التحويل إلى Google…';
+        btn.disabled = true;
+
+        try {
+            const ret = C.signInWithOAuth('google');
+            if (ret && typeof ret.then === 'function') {
+                ret.then(function () {
+                    // نجح الطلب — إن لم ينتقل المتصفح خلال مهلة قصيرة نُعيد وضوح الخطأ
+                    setTimeout(function () { if (!navigated) { clearTimeout(guard); restore(); } }, 9000);
+                }).catch(function (e) {
+                    clearTimeout(guard);
+                    restore();
+                    const msg = (e && (e.message || e.error_description)) || 'تعذّر بدء تسجيل الدخول';
+                    if (errEl) { errEl.textContent = msg; }
+                    if (typeof window.showToast === 'function') { window.showToast(msg, 'error', 6000); }
+                });
+            }
+        } catch (e) {
+            clearTimeout(guard);
+            restore();
+            if (errEl) { errEl.textContent = (e && e.message) || 'تعذّر بدء تسجيل الدخول'; }
         }
     });
 

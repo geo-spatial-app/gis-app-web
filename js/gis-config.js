@@ -12,7 +12,7 @@
    ================================================================ */
 window.GIS_SUPABASE_CONFIG = {
     /* Project URL — Supabase → Project Settings → API → Project URL */
-    url: 'https://fkwpxintxuvvpxiyurs.supabase.co',
+    url: 'https://fkwpxintxuvvpzxiyurs.supabase.co',
 
     /* anon public / publishable key — Supabase → Project Settings → API
        (الصيغ الجديدة: sb_publishable_... أو JWT eyJhbGciOi...)

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<title>Supabase Connection Tests</title>
+<style>
+ body{font:13px/1.7 Consolas,monospace;background:#0b1220;color:#e2e8f0;margin:16px}
+ h1{font-size:16px}
+ .p{color:#34d399}.f{color:#f87171}.n{color:#f59e0b}
+ #summary{margin-top:12px;padding:10px;border:1px solid #334155;border-radius:8px;font-weight:700}
+</style>
+<script>
+/* يُنفَّذ قبل تحميل الوحدة — لتهيئة حالة التخزين قبل readConfig() */
+(function () {
+    var p = new URLSearchParams(location.search).get('persist');
+    if (p === 'corrupt') {
+        try { localStorage.setItem('gisSbUrl', 'banana'); localStorage.setItem('gisSbKey', ''); } catch (e) {}
+    }
+})();
+</script>
+</head>
+<body>
+<h1>Supabase Connection / Config Tests</h1>
+<pre id="out"></pre>
+<div id="summary">RUNNING…</div>
+<div id="tab-cloud"></div>
+
+<script src="../js/gis-config.js"></script>
+<script src="../js/gis-supabase.js"></script>
+<script>
+(function () {
+    'use strict';
+    var out = document.getElementById('out');
+    var pass = 0, fail = 0, done = false;
+    var NET = location.protocol.indexOf('http') === 0;
+    var params = new URLSearchParams(location.search);
+    var persist = params.get('persist');
+
+    function line(cls, txt) {
+        var d = document.createElement('div');
+        d.className = cls; d.textContent = txt;
+        out.appendChild(d);
+    }
+    function ok(id, cond, msg) {
+        if (cond) { pass++; line('p', '[PASS] ' + id + ' — ' + (msg || '')); }
+        else { fail++; line('f', '[FAIL] ' + id + ' — ' + (msg || '')); }
+        return !!cond;
+    }
+    function fakeJwt(role) {
+        return btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })) + '.' +
+               btoa(JSON.stringify({ iss: 'supabase', ref: 'proj', role: role, iat: 1, exp: 4102444800 })) + '.sig';
+    }
+    function finish() {
+        if (done) return; done = true;
+        var sum = document.getElementById('summary');
+        var s = 'SUMMARY pass=' + pass + ' fail=' + fail + ' mode=' + (persist || 'run');
+        sum.textContent = s;
+        sum.className = fail ? 'f' : 'p';
+        document.title = (fail ? 'RESULT:FAIL ' : 'RESULT:PASS ') + s;
+        document.body.setAttribute('data-result', fail ? 'FAIL' : 'PASS');
+        document.body.setAttribute('data-summary', s);
+    }
+    function start() {
+        var C = window.GIS && window.GIS.cloud;
+        var cfg = window.GIS_SUPABASE_CONFIG || {};
+
+        /* ===== وضع اختبار إعادة التحميل الحقيقية ===== */
+        if (persist === 'write') {
+            try {
+                if (C) C.resetToDefaults();
+                localStorage.setItem('gisTestMarker', 'w2');
+                ok('p-write-marker', localStorage.getItem('gisTestMarker') === 'w2', 'كتابة علامة في localStorage');
+                ok('p-write-config', C && C.configured(), 'الإعدادات مكتملة قبل إعادة التحميل');
+            } catch (e) { ok('p-write', false, 'استثناء: ' + e.message); }
+            finish(); return;
+        }
+        if (persist === 'read') {
+            try {
+                ok('p-read-marker', localStorage.getItem('gisTestMarker') === 'w2', 'العلامة نجت إعادة التحميل الحقيقية');
+                ok('p-read-config', C && C.configured(), 'الإعدادات محمّلة تلقائيًا بعد إعادة التحميل بدون أي إدخال');
+                ok('p-read-ready', C && C.diagnostics().ready === true, 'بوابة الجاهزية مُفعّلة');
+                ok('p-read-fromLS', C && C.storageAvailable(), 'التخزين متاح');
+                ok('p-read-url', C && C.diagnostics().url === cfg.url, 'الرابط = الرابط المنشور');
+            } catch (e) { ok('p-read', false, 'استثناء: ' + e.message); }
+            if (C) { try { C.resetToDefaults(); localStorage.removeItem('gisTestMarker'); } catch (e) {} }
+            finish(); return;
+        }
+        if (persist === 'corrupt') {
+            /* محاكاة الخلل الأصلي: رابط تالف في التخزين قبل تحميل الوحدة */
+            try {
+                ok('c-configured', C && C.configured(), 'ما زال مُهيّأ رغم تلف التخزين');
+                ok('c-url', C && C.diagnostics().url === cfg.url, 'رجع للرابط المنشور تلقائيًا');
+                if (C) C.render();
+                var root = document.getElementById('tab-cloud');
+                ok('c-no-form', root && root.innerHTML.indexOf('data-f="url"') === -1, 'لا يعرض نموذج الإدخال بعد التلف');
+                ok('c-no-prompt-msg', root && !/أعد إدخال|الإعدادات المحفوظة غير صالحة/.test(root.innerHTML), 'لا رسالة خطأ إعدادات');
+            } catch (e) { ok('c-run', false, 'استثناء: ' + e.message); }
+            if (C) { try { C.resetToDefaults(); } catch (e) {} }
+            finish(); return;
+        }
+
+        /* ===== التشغيل العادي ===== */
+        ok('t01-config-file', !!cfg.url, 'ملف إعدادات النشر محمّل (js/gis-config.js)');
+        ok('t02-module', !!C, 'وحدة window.GIS.cloud محمّلة');
+        if (!C) { finish(); return; }
+
+        var d = C.diagnostics();
+        ok('t03-ready', d.ready === true, 'الإعدادات تُحمَّل عند بدء التشغيل قبل أي استعلام');
+        ok('t04-configured-no-input', d.configured === true, 'configured() === true بدون أي إدخال يدوي');
+        ok('t05-valid-url', /^https:\/\/[a-z0-9.-]+\.supabase\.co$/i.test(d.url), 'الرابط صالح: ' + d.url);
+        ok('t06-defaults', d.usingDefaults === true, 'المصدر = إعدادات النشر لا تخزين المتصفح');
+        ok('t07-published-has-key', d.publishedDefaults === true, 'المفتاح العام مضبوط' + (d.publishedDefaults ? '' : ' — أضف anon key في js/gis-config.js'));
+        ok('t08-redirect', String(d.redirect || '').indexOf('geo-spatial-app.github.io') !== -1, 'redirectUrl صحيح: ' + d.redirect);
+        ok('t09-storage', d.storageOk === true, 'التخزين متاح');
+        ok('t10-no-secret', (function () {
+            var k = String(cfg.key || '');
+            if (/^sb_secret_/i.test(k)) return false;
+            try {
+                var p = k.split('.');
+                if (p.length === 3) { var pl = JSON.parse(atob(p[1])); return pl.role !== 'service_role'; }
+            } catch (e) {}
+            return k.indexOf('sb_publishable_') === 0;
+        })(), 'المفتاح المنشور عام (publishable/anon) وليس سريًا');
+
+        /* استعادة بعد تلف متعمَّد للتخزين (الخلل الأصلي) */
+        try {
+            var su = localStorage.getItem('gisSbUrl'), sk = localStorage.getItem('gisSbKey');
+            localStorage.setItem('gisSbUrl', 'banana');
+            localStorage.setItem('gisSbKey', '');
+            var rec = C.readConfig();
+            ok('t11-recover-from-corrupt', rec === true && C.configured() === true, 'استعاد الإعدادات تلقائيًا من التلف');
+            ok('t12-recover-url', C.diagnostics().url === cfg.url, 'الرابط رجع للإصدار المنشور');
+            if (su) localStorage.setItem('gisSbUrl', su); else localStorage.removeItem('gisSbUrl');
+            if (sk) localStorage.setItem('gisSbKey', sk); else localStorage.removeItem('gisSbKey');
+            C.readConfig();
+        } catch (e) { ok('t11-recover', false, 'استثناء: ' + e.message); }
+
+        /* الإعدادات المخصّصة ثم الرجوع للنشر (بدون فراغ أبدًا) */
+        try {
+            C.setConfig('https://custom-project.supabase.co', fakeJwt('anon')).then(function () {
+                ok('t13-custom-saved', C.diagnostics().url === 'https://custom-project.supabase.co', 'حفظ إعداد مخصص');
+                ok('t14-custom-persists', C.readConfig() === true && C.diagnostics().url === 'https://custom-project.supabase.co', 'الإعداد المخصص يُقرأ من التخزين بعد إعادة التحميل');
+                C.resetToDefaults();
+                ok('t15-reset-keeps-config', C.configured() === true && C.diagnostics().url === cfg.url, 'زر الرجوع يعود للنشر ولا يفرغ الإعدادات');
+            }).catch(function (e) { ok('t13-custom-saved', false, 'رفض: ' + C.errMsg(e)); });
+        } catch (e) { ok('t13-custom-saved', false, 'استثناء: ' + e.message); }
+
+        /* رفض المفاتيح السرية (الصورتان: JWT و sb_secret_) */
+        C.setConfig(cfg.url || 'https://x.supabase.co', fakeJwt('service_role'))
+            .then(function () { ok('t16-reject-secret', false, 'قبل مفتاح service_role!'); })
+            .catch(function (e) { ok('t16-reject-secret', e.kind === 'config', 'رفض service_role وتصنيفه كخطأ إعدادات'); });
+        C.setConfig(cfg.url || 'https://x.supabase.co', 'sb_secret_' + 'A'.repeat(20))
+            .then(function () { ok('t16b-reject-sb-secret', false, 'قبل مفتاح sb_secret_!'); })
+            .catch(function (e) { ok('t16b-reject-sb-secret', e.kind === 'config', 'رفض sb_secret_ (الصيغة الجديدة)'); });
+
+        /* فصل الأخطاء */
+        ok('t17-err-network', C.classifyError(new Error('TypeError: Failed to fetch')).kind === 'network', 'فشل الشبكة → network');
+        ok('t18-err-network-msg', C.classifyError(new Error('Failed to fetch')).msg.indexOf('الإعدادات محفوظة') !== -1, 'رسالة الشبكة تؤكد حفظ الإعدادات');
+        ok('t19-err-session', C.classifyError(new Error('JWT expired')).kind === 'session', 'انتهاء الجلسة → session');
+        ok('t20-err-auth', C.classifyError(new Error('Invalid login credentials')).kind === 'auth', 'بيانات دخول خاطئة → auth');
+        ok('t21-err-perm', C.classifyError(new Error('new row violates row-level security policy')).kind === 'permission', 'مخالفة RLS → permission');
+        ok('t22-err-config', C.classifyError(new Error('Invalid API key')).kind === 'config', 'مفتاح خاطئ → config');
+        ok('t23-err-explicit', C.classifyError({ kind: 'session', message: 'x' }).kind === 'session', 'احترام النوع المُمرَّر صراحةً');
+        ok('t24-no-reprompt', !/أعد إدخال|أدخل الرابط|لم تضبط/.test(
+            [new Error('Failed to fetch'), new Error('JWT expired'), new Error('Invalid login credentials')]
+                .map(C.errMsg).join(' | ')), 'لا رسالة تطلب إعادة إدخال الإعدادات في الشبكة/الجلسة/الدخول');
+
+        /* تسجيل الخروج لا يُسقط التطبيق */
+        Promise.resolve()
+            .then(function () { return C.signOut(); })
+            .then(function () { ok('t25-signout', true, 'signOut() تُحلّ بدون رفض'); })
+            .catch(function (e) { ok('t25-signout', false, 'signOut() رفض: ' + e.message); });
+
+        if (NET) {
+            Promise.all([C._getClient(), C._getClient()])
+                .then(function (r) {
+                    ok('t26-singleton', r[0] === r[1] && !!r[0], 'نفس الكائن (Singleton) في استدعاءين');
+                    var k = localStorage.getItem('gisSbKey') || cfg.key || '';
+                    return fetch(d.url + '/auth/v1/health', { headers: { apikey: k } });
+                })
+                .then(function (r) { ok('t27-health', r.status === 200 || r.status === 401, 'health endpoint → HTTP ' + r.status); })
+                .catch(function (e) { ok('t26-singleton', false, 'فشل الاتصال: ' + e.message); })
+                .then(finish);
+        } else {
+            line('n', '[SKIP] اختبارات الشبكة (تعمل عبر http فقط)');
+        }
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+
+    setTimeout(function () {
+        if (!done && NET && document.getElementById('summary').textContent.indexOf('SUMMARY') === -1) {
+            var d2 = document.getElementById('summary');
+            var s = 'SUMMARY pass=' + pass + ' fail=' + fail + ' (timeout)';
+            d2.textContent = s; d2.className = 'n';
+            document.title = 'RESULT:TIMEOUT ' + s;
+            document.body.setAttribute('data-result', 'TIMEOUT');
+            done = true;
+        } else if (!done) { finish(); }
+    }, 12000);
+})();
+</script>
+</body>
+</html>

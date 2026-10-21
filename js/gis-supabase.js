@@ -9,17 +9,28 @@
     var SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     var LS_URL = 'gisSbUrl';
     var LS_KEY = 'gisSbKey';
-    var APP_VERSION = 'v41';
+    var APP_VERSION = 'v42';
     var sessionOpenLogged = false;
 
-    var SB_URL = localStorage.getItem(LS_URL) || '';
-    var SB_KEY = localStorage.getItem(LS_KEY) || '';
+    /* إعدادات النشر الثابتة (js/gis-config.js) — المصدر الأول دائمًا */
+    var PUBLISHED = window.GIS_SUPABASE_CONFIG || {};
+    var DEFAULT_URL = normUrl(PUBLISHED.url || '');
+    var DEFAULT_KEY = normKey(PUBLISHED.key || '');
+
+    var SB_URL = '';
+    var SB_KEY = '';
+    var configReady = false;
+    var configReadyPromise = null;
+    var storageOk = true;
     var client = null;
+    var clientSig = '';
     var sdkPromise = null;
     var user = null;
     var projects = [];
     var projectsLoaded = false;
     var root = null;
+    /* ما يكتبه المستخدم في نموذج الإعدادات (يُحفظ عند إعادة رسم الشاشة) */
+    var draft = { url: null, key: null };
 
     // ---------- حالة المزامنة التلقائية ----------
     var LS_AUTOSYNC = 'gisAutoSync';
@@ -31,7 +42,86 @@
     var syncBusy = false;
 
     // ---------- helpers ----------
-    function configured() { return !!(SB_URL && SB_KEY); }
+    /* تخزين آمن: لا يرمي استثناء أبدًا، ومع فشل التخزين يبقى هناك
+       نسخة في الذاكرة + الإعدادات المنشورة كاحتياطي دائم. */
+    var memStore = {};
+    function lsGet(k) {
+        try {
+            var v = localStorage.getItem(k);
+            if (v !== null && v !== undefined && v !== '') return v;
+        } catch (e) { storageOk = false; }
+        return Object.prototype.hasOwnProperty.call(memStore, k) ? memStore[k] : null;
+    }
+    function lsSet(k, v) {
+        memStore[k] = v;
+        try { localStorage.setItem(k, v); storageOk = true; return true; }
+        catch (e) { storageOk = false; return false; }
+    }
+    function lsDel(k) {
+        if (Object.prototype.hasOwnProperty.call(memStore, k)) delete memStore[k];
+        try { localStorage.removeItem(k); storageOk = true; }
+        catch (e) { storageOk = false; }
+    }
+    function mkErr(kind, msg) { var e = new Error(msg); e.kind = kind; return e; }
+
+    /* هل المفتاح service_role أو مفتاح سري؟ (ممنوع استخدامه في الواجهة)
+       يغطي الصيغتين: sb_secret_... (النظام الجديد) و JWT بدور service_role */
+    function isSecretKey(k) {
+        if (/^sb_secret_/i.test(String(k || ''))) return true;
+        try {
+            var p = String(k || '').split('.');
+            if (p.length !== 3) return false;
+            var payload = JSON.parse(atob(p[1].replace(/-/g, '+').replace(/_/g, '/')));
+            return !!(payload && payload.role === 'service_role');
+        } catch (e) { return false; }
+    }
+
+    /* قراءة الإعدادات: ما كتبه المستخدم (لو صالح) وإلا إعدادات النشر،
+       ثم تُثبَّت في التخزين حتى لا تُطلب مرة أخرى أبدًا. */
+    function readConfig() {
+        var u = lsGet(LS_URL);
+        var k = lsGet(LS_KEY);
+        if (u && k && validUrl(normUrl(u)) && !isSecretKey(normKey(k))) {
+            SB_URL = normUrl(u);
+            SB_KEY = normKey(k);
+        } else {
+            SB_URL = DEFAULT_URL;
+            SB_KEY = DEFAULT_KEY;
+        }
+        if (isSecretKey(SB_KEY)) {
+            SB_KEY = '';
+            try { toast('ممنوع استخدام service_role في الواجهة — استخدم المفتاح العام anon', 'error'); } catch (e) {}
+        }
+        if (u !== SB_URL || k !== SB_KEY) { lsSet(LS_URL, SB_URL); lsSet(LS_KEY, SB_KEY); }
+        client = null; clientSig = '';
+        configReady = true;
+        return configured();
+    }
+
+    /* بوابة الجاهزية: أي استعلام أو تسجيل دخول يمرّ من هنا بعد تحميل الإعدادات */
+    function whenReady() {
+        if (configReady) return Promise.resolve(configured());
+        if (!configReadyPromise) {
+            configReadyPromise = new Promise(function (resolve) {
+                resolve(readConfig());
+            });
+        }
+        return configReadyPromise;
+    }
+
+    function configured() { return !!(SB_URL && SB_KEY && validUrl(SB_URL) && !isSecretKey(SB_KEY)); }
+
+    function resetToDefaults() {
+        lsDel(LS_URL); lsDel(LS_KEY);
+        readConfig();
+        user = null; projects = []; projectsLoaded = false;
+        return configured();
+    }
+
+    function redirectUri() {
+        if (PUBLISHED.redirectUrl) return PUBLISHED.redirectUrl;
+        return window.location.origin + window.location.pathname;
+    }
 
     function esc(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -43,17 +133,46 @@
         try { return new Date(iso).toLocaleString(); } catch (e) { return iso || ''; }
     }
 
-    function errMsg(err) {
-        var m = (err && (err.message || err.error_description || err.msg || err.hint)) || String(err || '');
-        if (/failed to fetch|networkerror|load failed|fetch failed/i.test(m)) {
-            return 'تعذّر الوصول لسيرفر Supabase — راجع Project URL واتصال الإنترنت';
+    /* فصل الأخطاء: إعدادات ← دخول ← صلاحيات ← جلسة ← شبكة ← خادم */
+    function classifyError(err) {
+        if (err && err.kind && err.kind !== 'error') {
+            var k0 = err.kind;
+            if (k0 === 'config' || k0 === 'auth' || k0 === 'permission' || k0 === 'session' || k0 === 'network') {
+                return { kind: k0, msg: err.message };
+            }
         }
-        if (/invalid api key|invalidapikey/i.test(m)) return 'مفتاح anon غير صحيح';
-        if (/email not confirmed/i.test(m)) return 'لازم تأكيد البريد أولًا (أو عطّل Confirm email في Supabase)';
-        if (/user already registered/i.test(m)) return 'هذا البريد مسجّل بالفعل — جرّب تسجيل الدخول';
-        if (/password should be at least/i.test(m)) return 'كلمة المرور قصيرة (٦ أحرف على الأقل)';
-        return m;
+        var m = (err && (err.message || err.error_description || err.msg || err.hint)) || String(err || '');
+        var code = String((err && (err.code || err.status)) || '');
+
+        if (!configured()) return { kind: 'config', msg: 'إعدادات Supabase غير مكتملة — راجع js/gis-config.js' };
+        if (!validUrl(SB_URL)) return { kind: 'config', msg: 'رابط Supabase غير صالح: «' + SB_URL + '» — الشكل https://xxxx.supabase.co' };
+        if (/service_role|secret key/i.test(m)) return { kind: 'config', msg: 'مفتاح سري (service_role) مرفوض — استخدم المفتاح العام anon' };
+        if (/api key|apikey|invalid.*key|missing.*key|no api key/i.test(m)) return { kind: 'config', msg: 'مفتاح anon غير صحيح أو غير مفعّل في مشروعك' };
+
+        if (/failed to fetch|networkerror|load failed|fetch failed|net::err|err_internet|timed? ?out|timeout|offline/i.test(m)) {
+            return { kind: 'network', msg: 'تعذّر الوصول لسيرفر Supabase — تحقّق من الإنترنت. الإعدادات محفوظة ولا حاجة بإعادة إدخالها.' };
+        }
+        if (/jwt (has )?expired|token .*expired|refresh_token|refresh token|session_not_found|invalid refresh|not authenticated|401|auth\/session/i.test(m)) {
+            return { kind: 'session', msg: 'انتهت الجلسة — سجّل الدخول مرة أخرى (الإعدادات محفوظة)' };
+        }
+        if (/row-level security|not authorized|permission denied|policy|violates|42501|PGRST116/i.test(m)) {
+            return { kind: 'permission', msg: 'ليس لديك صلاحية لهذا الإجراء (RLS) — تأكّد أنك دخلت بالحساب الصحيح' };
+        }
+        if (/email not confirmed/i.test(m)) return { kind: 'auth', msg: 'لازم تأكيد البريد أولًا (أو عطّل Confirm email في Supabase)' };
+        if (/invalid login credentials|invalid credentials/i.test(m)) return { kind: 'auth', msg: 'البريد أو كلمة المرور غير صحيحة' };
+        if (/user already registered|already registered/i.test(m)) return { kind: 'auth', msg: 'هذا البريد مسجّل بالفعل — جرّب تسجيل الدخول' };
+        if (/password should be at least/i.test(m)) return { kind: 'auth', msg: 'كلمة المرور قصيرة (٦ أحرف على الأقل)' };
+        if (/provider is not enabled|not.*enabled/i.test(m)) return { kind: 'auth', msg: 'تسجيل الدخول بهذا المزوّد موقوف — فعّله من Supabase → Authentication → Providers' };
+        if (/redirect.*not.*allowed|unauthorized redirect|invalid redirect/i.test(m)) return { kind: 'config', msg: 'رابط إعادة التوجيه غير مسموح — ضعه في Supabase → Authentication → URL Configuration' };
+        if (/signup is disabled|signups? not allowed/i.test(m)) return { kind: 'auth', msg: 'التسجيل الجديد موقوف في مشروعك' };
+
+        return { kind: 'server', msg: m };
     }
+    function errMsg(err) {
+        var c = classifyError(err);
+        return c.msg;
+    }
+    function errKind(err) { return classifyError(err).kind; }
 
     function normUrl(u) {
         u = String(u || '').trim().replace(/\s+/g, '');
@@ -97,41 +216,74 @@
         return sdkPromise;
     }
 
+    /* العميل الوحيد المشترك (Singleton) — يُنشأ مرة واحدة لكل إعداد ويُعاد
+       استخدامه في كل الاستعلامات وتسجيل الدخول والمزامنة. */
     function getClient() {
-        if (!configured()) return Promise.reject(new Error('لم تضبط إعدادات Supabase بعد'));
-        if (!validUrl(SB_URL)) return Promise.reject(new Error('رابط Supabase غير صالح: «' + SB_URL + '» — أعد إدخاله بالشكل https://xxxx.supabase.co'));
-        return loadSDK().then(function () {
-            if (!client) {
-                client = window.supabase.createClient(SB_URL, SB_KEY, {
-                    auth: { persistSession: true, autoRefreshToken: true }
-                });
-                try {
-                    client.auth.onAuthStateChange(function (evt, session) {
-                        user = (session && session.user) ? session.user : null;
-                        projectsLoaded = false;
-                        render();
-                        if (user && typeof window.enterApp === 'function') {
-                            var entered = false;
-                            try { entered = localStorage.getItem('gisEntered') === '1'; } catch (e) {}
-                            if (!entered) { try { window.enterApp('cloud'); } catch (e) {} }
-                        }
-                        try {
-                            if (evt === 'SIGNED_IN' && user) { logEvent('login'); }
-                            else if (evt === 'INITIAL_SESSION' && user && !sessionOpenLogged) { sessionOpenLogged = true; logEvent('open'); }
-                        } catch (e) {}
-                    });
-                } catch (e) {}
+        return whenReady().then(function (ok) {
+            if (!ok) {
+                if (!SB_URL || !SB_KEY) throw mkErr('config', 'إعدادات Supabase غير مضبوطة — أضف الرابط والمفتاح في js/gis-config.js');
+                throw mkErr('config', 'رابط Supabase غير صالح: «' + SB_URL + '» — الشكل المطلوب https://xxxx.supabase.co');
             }
+            if (isSecretKey(SB_KEY)) throw mkErr('config', 'مفتاح سري (service_role) مرفوض — استخدم المفتاح العام anon');
+            return loadSDK();
+        }).then(function () {
+            var sig = SB_URL + '|' + SB_KEY;
+            if (client && clientSig === sig) return client;
+
+            client = window.supabase.createClient(SB_URL, SB_KEY, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    storage: window.localStorage
+                }
+            });
+            clientSig = sig;
+            try {
+                client.auth.onAuthStateChange(function (evt, session) {
+                    var hadUser = !!user;
+                    user = (session && session.user) ? session.user : null;
+
+                    /* تحديث الجلسة الصامت (TOKEN_REFRESHED) لا يمسّ الواجهة
+                       حتى لا يُمسح ما يكتبه المستخدم في نموذج الإعدادات */
+                    if (evt === 'TOKEN_REFRESHED') return;
+
+                    if (evt !== 'PASSWORD_RECOVERY') projectsLoaded = false;
+                    render();
+
+                    if (user && typeof window.enterApp === 'function') {
+                        var entered = false;
+                        try { entered = localStorage.getItem('gisEntered') === '1'; } catch (e) {}
+                        if (!entered) { try { window.enterApp('cloud'); } catch (e) {} }
+                    }
+                    try {
+                        if (evt === 'SIGNED_IN' && user) { logEvent('login'); }
+                        else if (evt === 'INITIAL_SESSION' && user && !sessionOpenLogged) { sessionOpenLogged = true; logEvent('open'); }
+                        else if (evt === 'SIGNED_OUT' && hadUser && !user) { sessionOpenLogged = false; }
+                    } catch (e) {}
+                });
+            } catch (e) {}
             return client;
         });
     }
 
     function setConfig(url, key) {
-        SB_URL = normUrl(url);
-        SB_KEY = normKey(key);
-        localStorage.setItem(LS_URL, SB_URL);
-        localStorage.setItem(LS_KEY, SB_KEY);
-        client = null;
+        var nu = normUrl(url);
+        var nk = normKey(key);
+        if (!validUrl(nu)) return Promise.reject(mkErr('config', 'رابط غير صالح: «' + nu + '» — لازم يكون https://xxxx.supabase.co'));
+        if (!nk) return Promise.reject(mkErr('config', 'المفتاح فارغ — أدخل anon public key'));
+        if (isSecretKey(nk)) return Promise.reject(mkErr('config', 'ممنوع استخدام service_role — استخدم المفتاح العام anon'));
+
+        SB_URL = nu; SB_KEY = nk;
+        var saved = lsSet(LS_URL, nu) && lsSet(LS_KEY, nk);
+        client = null; clientSig = '';
+        configReady = true;
+        draft.url = null; draft.key = null;
+
+        if (!saved) {
+            return Promise.reject(mkErr('config', 'المتصفح يمنع تخزين البيانات (وضع خاص/حظر) — الإعدادات ستبقى لآخر هذه الجلسة فقط'));
+        }
+        return Promise.resolve(true);
     }
 
     function testConnection(url, key) {
@@ -225,12 +377,29 @@
         try { localStorage.removeItem(LS_SYNCPID); } catch (e) {}
     }
     function signOut() {
-        if (!client) { user = null; projects = []; projectsLoaded = false; clearSyncProject(); render(); return Promise.resolve(); }
-        return client.auth.signOut().then(function () {
-            user = null; projects = []; projectsLoaded = false; clearSyncProject();
-            toast('تم تسجيل الخروج', 'info');
+        var finish = function (msg, type) {
+            user = null; projects = []; projectsLoaded = false;
+            clearSyncProject();
+            if (msg) toast(msg, type || 'info');
             render();
-        });
+        };
+        if (!client) { finish('', ''); return Promise.resolve(); }
+        return client.auth.signOut()
+            .then(function () { finish('تم تسجيل الخروج'); })
+            .catch(function (e) {
+                /* السيرفر غير متاح أو انتهت الجلسة: ننظّف محليًا حتى لا
+                   تعلّق الواجهة في حالة «مسجّل» بشكل خاطئ */
+                try {
+                    var sk = [];
+                    for (var i = 0; i < localStorage.length; i++) {
+                        var kk = localStorage.key(i);
+                        if (kk && /^sb-.*-auth-token/.test(kk)) sk.push(kk);
+                    }
+                    sk.forEach(function (x) { try { localStorage.removeItem(x); } catch (e2) {} });
+                } catch (e3) {}
+                client = null; clientSig = '';
+                finish('تم تسجيل الخروج محليًا' + (errKind(e) === 'network' ? ' — تعذّر إشعار السيرفر، الإعدادات محفوظة' : ''), 'info');
+            });
     }
 
     function signInWithOAuth(provider) {
@@ -238,11 +407,15 @@
             .then(function (c) {
                 return c.auth.signInWithOAuth({
                     provider: provider,
-                    options: { redirectTo: window.location.origin + window.location.pathname }
+                    options: { redirectTo: redirectUri() }
                 });
             })
             .then(function (r) { if (r && r.error) throw r.error; })
-            .catch(function (e) { toast('فشل تسجيل الدخول بـ' + provider + ': ' + errMsg(e), 'error'); });
+            .catch(function (e) {
+                var c = classifyError(e);
+                var label = { config: 'إعدادات الاتصال', auth: 'الدخول', permission: 'الصلاحيات', session: 'الجلسة', network: 'الشبكة', server: 'الخادم' }[c.kind] || 'خطأ';
+                toast('فشل تسجيل الدخول بـ' + provider + ' [' + label + ']: ' + c.msg, 'error');
+            });
     }
 
     // ---------- projects ----------
@@ -380,42 +553,58 @@
     }
 
     function viewConfig() {
-        var warn = (SB_URL && !validUrl(SB_URL))
-            ? '<div style="color:#f87171;font-size:11.5px;margin:4px 0">الإعدادات المحفوظة غير صالحة: «' + esc(SB_URL) + '» — أعد إدخال الرابط الصحيح.</div>'
-            : '';
+        var warn = '';
+        if (!storageOk) {
+            warn = '<div style="color:#f59e0b;font-size:11.5px;margin:4px 0;background:#3b2f10;border:1px solid #78350f;padding:7px 9px;border-radius:8px">' +
+                'المتصفح يمنع تخزين البيانات (وضع خاص أو حظر تتبّع) — الإعدادات ستعمل حتى نهاية الجلسة فقط. ' +
+                'ادخل الإعدادات يدويًا في كل مرة أو افتح المتصفح في وضع عادي.</div>';
+        } else if (configured()) {
+            warn = '<div style="color:#34d399;font-size:11.5px;margin:4px 0">الإعدادات محمّلة تلقائيًا — لن تُطلب منك مرة أخرى.</div>';
+        }
+        var vUrl = (draft.url !== null && draft.url !== undefined) ? draft.url : SB_URL;
+        var vKey = (draft.key !== null && draft.key !== undefined) ? draft.key : SB_KEY;
         return '' +
             '<div class="tab-header"><h4><i class="fas fa-cloud"></i> Cloud (Supabase)</h4></div>' +
             '<div style="' + HINT + '">اربط مشروع Supabase الخاص بك: انسخ <b>Project URL</b> و<b>anon public key</b> من ' +
-            'Supabase &rarr; Project Settings &rarr; API، ثم اضغط حفظ. رابط الـURL يجب أن يكون بالشكل <b>https://xxxx.supabase.co</b>.</div>' +
+            'Supabase &rarr; Project Settings &rarr; API، ثم اضغط حفظ. رابط الـURL يجب أن يكون بالشكل <b>https://xxxx.supabase.co</b>. ' +
+            'الإعدادات الافتراضية تأتي من <b>js/gis-config.js</b> (إعدادات النشر).</div>' +
             warn +
             '<div style="' + CARD + '">' +
-            '<input data-f="url" type="text" placeholder="https://xxxx.supabase.co" value="' + esc(SB_URL) + '" style="' + INPUT + '">' +
-            '<input data-f="key" type="text" placeholder="anon public key" value="' + esc(SB_KEY) + '" style="' + INPUT + '">' +
+            '<input data-f="url" type="text" placeholder="https://xxxx.supabase.co" value="' + esc(vUrl) + '" style="' + INPUT + '">' +
+            '<input data-f="key" type="text" placeholder="anon public key" value="' + esc(vKey) + '" style="' + INPUT + '">' +
             '<button data-act="savecfg" style="' + BTN + '"><i class="fas fa-link"></i> حفظ الإعدادات</button>' +
             '<button data-act="testconn" style="' + BTN2 + 'width:100%;box-sizing:border-box;padding:9px;text-align:center"><i class="fas fa-plug-circle-check"></i> اختبار الاتصال</button>' +
             '</div>' +
-            (configured() ? '<button data-act="reset" style="' + BTN2 + 'margin-top:10px;color:#f87171;border-color:#7f1d1d"><i class="fas fa-trash"></i> مسح الإعدادات</button>' : '');
+            '<button data-act="reset" style="' + BTN2 + 'margin-top:10px;color:#f87171;border-color:#7f1d1d"><i class="fas fa-rotate-left"></i> الرجوع لإعدادات النشر</button>';
     }
     function wireConfig() {
+        var uInp = root.querySelector('[data-f="url"]');
+        var kInp = root.querySelector('[data-f="key"]');
+        /* حفظ ما يكتبه المستخدم حتى لا تمسحه إعادة الرسم */
+        if (uInp) uInp.addEventListener('input', function () { draft.url = this.value; });
+        if (kInp) kInp.addEventListener('input', function () { draft.key = this.value; });
+
         root.querySelector('[data-act="savecfg"]').addEventListener('click', function () {
-            var u = root.querySelector('[data-f="url"]').value;
-            var k = root.querySelector('[data-f="key"]').value;
+            var u = uInp ? uInp.value : '';
+            var k = kInp ? kInp.value : '';
             if (!u || !k) { toast('أدخل الرابط والمفتاح', 'error'); return; }
-            var nu = normUrl(u);
-            if (!validUrl(nu)) { toast('رابط غير صالح: «' + nu + '» — لازم يكون https://xxxx.supabase.co', 'error'); return; }
-            setConfig(nu, k);
-            toast('تم حفظ إعدادات Supabase', 'success');
-            render();
+            setConfig(u, k).then(function () {
+                toast('تم حفظ إعدادات Supabase', 'success');
+                render();
+            }).catch(function (e) {
+                toast(errMsg(e), 'error');
+                render();
+            });
         });
         var test = root.querySelector('[data-act="testconn"]');
         if (test) test.addEventListener('click', function () {
-            testConnection(normUrl(root.querySelector('[data-f="url"]').value), normKey(root.querySelector('[data-f="key"]').value));
+            testConnection(normUrl(uInp ? uInp.value : ''), normKey(kInp ? kInp.value : ''));
         });
         var reset = root.querySelector('[data-act="reset"]');
         if (reset) reset.addEventListener('click', function () {
-            if (!confirm('مسح إعدادات الربط بمشروع Supabase؟')) return;
-            localStorage.removeItem(LS_URL); localStorage.removeItem(LS_KEY);
-            SB_URL = ''; SB_KEY = ''; client = null; user = null; projectsLoaded = false;
+            if (!confirm('الرجوع لإعدادات النشر الافتراضية (js/gis-config.js)؟ لن تُحذف أي بيانات أو مشاريع.')) return;
+            resetToDefaults();
+            toast('رجعنا لإعدادات النشر الافتراضية', 'success');
             render();
         });
     }
@@ -454,9 +643,9 @@
             signUp(c.e, c.p).catch(function (err) { toast(errMsg(err), 'error'); });
         });
         root.querySelector('[data-act="forget"]').addEventListener('click', function () {
-            if (!confirm('مسح إعدادات الربط بمشروع Supabase؟')) return;
-            localStorage.removeItem(LS_URL); localStorage.removeItem(LS_KEY);
-            SB_URL = ''; SB_KEY = ''; client = null; user = null; projectsLoaded = false;
+            if (!confirm('الرجوع لإعدادات النشر الافتراضية (js/gis-config.js)؟ لن تُحذف المشاريع.')) return;
+            resetToDefaults();
+            toast('رجعنا لإعدادات النشر الافتراضية', 'success');
             render();
         });
     }
@@ -528,22 +717,41 @@
         if (as) as.addEventListener('change', function () { setAutoSync(this.checked); });
     }
 
+    // ---------- تحميل الإعدادات قبل أي استعلام أو تسجيل دخول ----------
+    try { readConfig(); } catch (e) { configReady = false; }
+
     // ---------- init ----------
     function init() {
         root = document.getElementById('tab-cloud');
         if (!root) return;
-        if (configured()) {
-            getClient().then(function (c) { return c.auth.getUser(); })
+        whenReady().then(function (ok) {
+            if (!ok) { render(); return; }
+            getClient()
+                .then(function (c) { return c.auth.getUser(); })
                 .then(function (r) { user = (r && r.data) ? r.data.user : null; })
-                .catch(function () {})
+                .catch(function (e) { try { console.warn('[cloud] init:', errKind(e), '—', errMsg(e)); } catch (_) {} })
                 .then(render);
-        } else {
-            render();
-        }
+        });
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
+
+    function diagnostics() {
+        return {
+            ready: configReady,
+            configured: configured(),
+            url: SB_URL,
+            usingDefaults: !!(DEFAULT_URL && DEFAULT_KEY) && SB_URL === DEFAULT_URL && SB_KEY === DEFAULT_KEY,
+            hasKey: !!SB_KEY,
+            publishedDefaults: !!(DEFAULT_URL && DEFAULT_KEY),
+            storageOk: storageOk,
+            clientReady: !!client,
+            signedIn: !!user,
+            userId: user ? user.id : null,
+            redirect: redirectUri()
+        };
+    }
 
     window.GIS = window.GIS || {};
     window.GIS.cloud = {
@@ -564,23 +772,49 @@
         autoSync: autoSync,
         setAutoSync: setAutoSync,
         getUser: function () { return user; },
-        render: render
+        render: render,
+        // ---------- واجهة التشخيص والاختبارات ----------
+        diagnostics: diagnostics,
+        classifyError: classifyError,
+        errKind: errKind,
+        whenReady: whenReady,
+        readConfig: readConfig,
+        resetToDefaults: resetToDefaults,
+        storageAvailable: function () { return storageOk; },
+        isConfigFromDefaults: function () { return !!(DEFAULT_URL && DEFAULT_KEY) && SB_URL === DEFAULT_URL && SB_KEY === DEFAULT_KEY; },
+        publishedConfig: function () { return { url: DEFAULT_URL, hasKey: !!DEFAULT_KEY, redirect: redirectUri() }; },
+        _getClient: getClient
     };
 
     // ---------- معالجة العودة من OAuth (Google/GitHub) وتسجيل الدخول المحفوظ ----------
     function bootstrapSession() {
-        if (!configured()) return;
-        var url = String(location.href || '');
-        var hasCallback = /[#?&](code|access_token|error|error_description)=/.test(url);
-        var hasPersisted = false;
-        try {
-            for (var i = 0; i < localStorage.length; i++) {
-                var k = localStorage.key(i);
-                if (k && /^sb-.*-auth-token/.test(k)) { hasPersisted = true; break; }
-            }
-        } catch (e) {}
-        if (!hasCallback && !hasPersisted) return;
-        getClient().then(function (c) { return c.auth.getSession(); }).catch(function () {});
+        whenReady().then(function (ok) {
+            if (!ok) return;
+            var url = String(location.href || '');
+            var hasCallback = /[#?&](code|access_token|error|error_description)=/.test(url);
+            var hasPersisted = false;
+            try {
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && /^sb-.*-auth-token/.test(k)) { hasPersisted = true; break; }
+                }
+            } catch (e) {}
+            if (!hasCallback && !hasPersisted) return;
+            return getClient()
+                .then(function (c) { return c.auth.getSession(); })
+                .then(function (r) {
+                    if (r && r.error) {
+                        var c = classifyError(r.error);
+                        try { console.warn('[cloud] session:', c.kind, '—', c.msg); } catch (_) {}
+                        if (c.kind === 'config' || c.kind === 'auth') render();
+                    }
+                })
+                .catch(function (e) {
+                    var c = classifyError(e);
+                    try { console.warn('[cloud] bootstrap:', c.kind, '—', c.msg); } catch (_) {}
+                    if (c.kind === 'config') render();
+                });
+        }).catch(function () {});
     }
     try { bootstrapSession(); } catch (e) {}
 })();

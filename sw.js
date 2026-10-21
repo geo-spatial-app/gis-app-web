@@ -6,7 +6,7 @@
       ويعمل بدون إنترنت عند انقطاعه.
    ================================================================ */
 
-const VERSION = 'gis-water-v39';
+const VERSION = 'gis-water-v40';
 const CACHE = VERSION + '-cache';
 
 /* ملفات التطبيق الأساسية (نخزّنها عند التثبيت) */
@@ -38,6 +38,7 @@ const CORE_ASSETS = [
     './js/gis-voronoi.js',
     './js/gis-timeline.js',
     './js/gis-labels.js',
+    './js/gis-config.js',
     './js/gis-supabase.js',
     './js/gis-imagery.js',
     './js/gis-export.js',

@@ -237,7 +237,10 @@
                 '<select data-f="zoom" style="' + U.selectStyle + '"></select>' +
                 '<label style="display:block;font-size:12px;font-weight:700;margin:12px 0 3px;color:var(--txt,#e2e8f0)">شكل منطقة التصدير</label>' +
                 '<select data-f="aoimode" style="' + U.selectStyle + '"><option value="rect">مستطيل (Bounding Box)</option><option value="poly">مضلع (Polygon)</option></select>' +
-                '<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;margin:10px 0 3px;color:var(--txt,#e2e8f0);cursor:pointer;"><input type="checkbox" data-f="incvec"> تضمين بيانات الفيكتور داخل النطاق (GeoJSON + KML)</label>' +
+                '<label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;margin:10px 0 3px;color:var(--txt,#e2e8f0);cursor:pointer;"><input type="checkbox" data-f="incvec"> تضمين بيانات الفيكتور داخل الحزمة (ZIP)</label>' +
+                '<label style="display:block;font-size:12px;font-weight:700;margin:8px 0 3px;color:var(--txt,#e2e8f0)">صيغة تصدير فيكتور النطاق</label>' +
+                '<select data-f="vecfmt" style="' + U.selectStyle + '"><option value="geojson">GeoJSON (.geojson)</option><option value="kml">Google Earth KML (.kml)</option><option value="kmz">Google Earth KMZ (.kmz)</option><option value="dxf">AutoCAD DXF — إحداثيات UTM (.dxf)</option><option value="shp">Shapefile مضغوط (.zip)</option><option value="csv">جدول CSV (.csv)</option></select>' +
+                '<button type="button" data-act="exportvec" style="' + U.btnStyle + ';background:#0284c7"><i class="fas fa-shapes"></i> تصدير فيكتور النطاق فقط (مطابق للصورة)</button>' +
                 '<button type="button" data-act="finish" style="' + U.btnStyle + 'display:none;"><i class="fas fa-check"></i> إنهاء المضلع</button>' +
                 '<button type="button" data-act="select" style="' + U.btnStyle + '"><i class="fas fa-vector-square"></i> ارسم مستطيل المنطقة على الخريطة</button>' +
                 '<button type="button" data-act="export" style="' + U.btnStyle + ';background:#059669"><i class="fas fa-file-export"></i> تصدير الصورة (ZIP + GeoTIFF)</button>' +
@@ -259,6 +262,15 @@
             var aoiModeSel = root.querySelector('[data-f="aoimode"]');
             var incVec = root.querySelector('[data-f="incvec"]');
             var expBtn = root.querySelector('[data-act="export"]');
+            var vecFmt = root.querySelector('[data-f="vecfmt"]');
+            var vecBtn = root.querySelector('[data-act="exportvec"]');
+
+            // مصدر الصور الافتراضي = خريطة الأساس النشطة حاليًا على الخريطة
+            try {
+                if (typeof activeMap !== 'undefined' && activeMap && srcSel) {
+                    if (sources.some(function (s) { return s.key === activeMap; })) { srcSel.value = activeMap; }
+                }
+            } catch (e) {}
 
             var rectLayer = null, polyLayer = null, polyPts = [], polyMarkers = null;
             var drawing = false, startLatLng = null;
@@ -294,6 +306,25 @@
                 }
                 for (var i = 0; i < sources.length; i++) { if (sources[i].key === key) { return sources[i]; } }
                 return sources[0];
+            }
+
+            function collectAoiFeatures() {
+                if (typeof window.collectExportFeatures !== 'function') { return []; }
+                var box = bbox();
+                if (!box) { return []; }
+                var all = window.collectExportFeatures('visible');
+                if (!all || !all.length) { return []; }
+                var bounds = L.latLngBounds(L.latLng(box.south, box.west), L.latLng(box.north, box.east));
+                var usePoly = (aoiMode() === 'poly' && polyLayer && window.turf);
+                var polyFC = usePoly ? polyLayer.toGeoJSON() : null;
+                return all.filter(function (f) {
+                    try {
+                        if (usePoly) { return turf.booleanIntersects(f, polyFC); }
+                        var lay = L.geoJSON(f);
+                        var b = lay.getBounds();
+                        return b.isValid() && b.intersects(bounds);
+                    } catch (e) { return false; }
+                });
             }
 
             function rebuildZoomOptions() {
@@ -508,20 +539,9 @@
                     zip.file('imagery.tif', tifBytes);
                     zip.file('aoi.geojson', JSON.stringify(geojson, null, 2));
 
-                    if (incVec && incVec.checked && typeof window.collectExportFeatures === 'function') {
+                    if (incVec && incVec.checked) {
                         try {
-                            var all = window.collectExportFeatures('visible');
-                            var bounds = L.latLngBounds(L.latLng(box.south, box.west), L.latLng(box.north, box.east));
-                            var usePoly = (aoiMode() === 'poly' && polyLayer && window.turf);
-                            var polyFC = usePoly ? polyLayer.toGeoJSON() : null;
-                            var inside = all.filter(function (f) {
-                                try {
-                                    if (usePoly) { return turf.booleanIntersects(f, polyFC); }
-                                    var lay = L.geoJSON(f);
-                                    var b = lay.getBounds();
-                                    return b.isValid() && b.intersects(bounds);
-                                } catch (e) { return false; }
-                            });
+                            var inside = collectAoiFeatures();
                             if (inside.length) {
                                 zip.file('aoi_features.geojson', JSON.stringify({ type: 'FeatureCollection', features: inside }, null, 2));
                                 if (typeof window.geojsonToKML === 'function') {
@@ -558,6 +578,16 @@
             selectBtn.addEventListener('click', beginSelect);
             finishBtn.addEventListener('click', finishPoly);
             expBtn.addEventListener('click', function () { doExport(); });
+            if (vecBtn) {
+                vecBtn.addEventListener('click', function () {
+                    try {
+                        if (typeof window.exportGeoData !== 'function') { ctx.notify('محرّك التصدير غير متاح', 'error'); return; }
+                        var feats = collectAoiFeatures();
+                        if (!feats.length) { ctx.notify('لا توجد بيانات فيكتور داخل نطاق التحديد — أضف طبقات أو أعد تحديد المنطقة', 'error', 5200); return; }
+                        window.exportGeoData({ type: 'FeatureCollection', features: feats }, vecFmt ? vecFmt.value : 'geojson', { name: 'aoi_features' });
+                    } catch (e) { ctx.notify('فشل تصدير الفيكتور: ' + (e && e.message ? e.message : e), 'error', 5200); }
+                });
+            }
 
             var onMoveEnd = function () { if (rectLayer) { updateInfo(); } };
             map.on('moveend', onMoveEnd);

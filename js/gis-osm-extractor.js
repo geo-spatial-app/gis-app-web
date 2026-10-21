@@ -158,15 +158,17 @@
     }
 
     /* ---------------- Query builders ---------------- */
-    function buildPresetQuery(key, bbox) {
+    function buildPresetQuery(key, bbox, polyClause) {
         var p = PRESETS[key];
         if (!p || !p.filters) { return ''; }
-        var lines = p.filters.map(function (f) { return '  nwr' + f + '(' + bbox + ');'; });
+        var area = polyClause || ('(' + bbox + ')');
+        var lines = p.filters.map(function (f) { return '  nwr' + f + area + ';'; });
         return '[out:json][timeout:60];\n(\n' + lines.join('\n') + '\n);\nout body;\n>;\nout skel qt;';
     }
-    function buildCustomQuery(text, bbox) {
+    function buildCustomQuery(text, bbox, polyClause) {
         var t = String(text || '').trim();
         if (!t) { return ''; }
+        if (polyClause) { t = t.split('{{poly}}').join(polyClause); }
         if (t.indexOf('{{bbox}}') >= 0) { t = t.split('{{bbox}}').join(bbox); }
         if (!/\[out:/.test(t)) { t = '[out:json][timeout:60];\n' + t; }
         if (!/\bout\b/.test(t)) { t += '\nout body;\n>;\nout skel qt;'; }
@@ -226,7 +228,7 @@
                 '<label style="display:block;font-size:12px;font-weight:700;margin:12px 0 3px;color:var(--txt,#e2e8f0)">نوع البيانات</label>' +
                 '<select data-f="preset" style="' + SEL + '">' + presetOpts + '</select>' +
                 '<div data-f="customwrap" style="display:none">' +
-                    '<textarea data-f="custom" class="osm-ta" placeholder="اكتب استعلام Overpass، مثال:\nnwr[&quot;amenity&quot;=&quot;drinking_water&quot;]({{bbox}});&#10;(استخدم {{bbox}} كبديل عن منطقة الاهتمام)"></textarea>' +
+                    '<textarea data-f="custom" class="osm-ta" placeholder="اكتب استعلام Overpass، مثال:\nnwr[&quot;amenity&quot;=&quot;drinking_water&quot;]({{poly}});&#10;({{poly}} = مضلع بالظبط · {{bbox}} = نطاق مربّع)"></textarea>' +
                 '</div>' +
                 '<button class="osm-btn primary" data-act="run" style="margin-top:12px"><i class="fas fa-cloud-arrow-down"></i> تنزيل البيانات من OSM</button>' +
                 '<div class="osm-prog" data-f="prog" style="display:none"><div data-f="progtext" style="font-size:11px;margin-bottom:4px"></div><div class="osm-bar"><span data-f="progbar"></span></div></div>' +
@@ -275,6 +277,11 @@
                 return { west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() };
             }
             function bboxStr() { var b = bboxOf(); return [b.south, b.west, b.north, b.east].map(function (n) { return n.toFixed(6); }).join(','); }
+            function polyStr() {
+                if (aoiMode !== 'poly' || !poly || polyPts.length < 3) { return ''; }
+                var pts = polyPts.map(function (ll) { return ll.lat.toFixed(6) + ' ' + ll.lng.toFixed(6); }).join(' ');
+                return pts ? 'poly:"' + pts + '"' : '';
+            }
             function updateAoiInfo() {
                 var b = bboxOf();
                 var label = aoiMode === 'rect' ? 'مستطيل مرسوم' : (aoiMode === 'poly' ? 'مضلع مرسوم' : 'نافذة الخريطة الحالية');
@@ -365,7 +372,8 @@
             async function run() {
                 var key = presetSel.value;
                 var bbox = bboxStr();
-                var query = (key === 'custom') ? buildCustomQuery(customTa.value, bbox) : buildPresetQuery(key, bbox);
+                var polyClause = polyStr();
+                var query = (key === 'custom') ? buildCustomQuery(customTa.value, bbox, polyClause) : buildPresetQuery(key, bbox, polyClause);
                 if (!query) { if (ctx.notify) { ctx.notify('اكتب استعلامًا مخصّصًا أولًا', 'warn'); } return; }
                 runBtn.disabled = true;
                 setProgress('تجهيز الاستعلام…', 8);

@@ -772,6 +772,7 @@
         #tab-tools .save-row .export-btn { flex:0 0 auto; padding:0 16px; }
         #tab-tools .draw-tool-btn.active { background:#e8973a; color:#fff; border-color:#e8973a; box-shadow:0 2px 10px rgba(232,151,58,.4); }
     </style>
+    <link rel="stylesheet" href="js/gis-command-center.css?v=giswater" />
 </head>
 <body>
 
@@ -1253,6 +1254,8 @@
 
 <!-- ===== طبقة أساس الوحدات المستقلة (Module Foundation) — تُحمَّل قبل سكربت التطبيق ===== -->
 <script src="js/gis-core.js"></script>
+<script src="js/gis-icons.js"></script>
+<script src="js/gis-ui.js"></script>
 
 <script>
     // ================================================================
@@ -6301,6 +6304,7 @@ const items = [
     } catch (e) {}
     function apply() {
         document.documentElement.style.setProperty('--gis-icon-size', size + 'px');
+        try { document.dispatchEvent(new CustomEvent('gis:iconsize', { detail: { size: size } })); } catch (e) {}
     }
     apply();
     document.addEventListener('wheel', function (event) {

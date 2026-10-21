@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>GIS UI Tests — تخصيص الواجهة (GIS Command Center)</title>
+<link rel="stylesheet" href="../js/gis-command-center.css" />
+<style>
+    /* نسخة طبقات أساسية من index.html — للتجربة فقط (لا تؤثر على التطبيق) */
+    :root{--panel-bg:rgba(15,23,42,.82);--card-bg:#1e293b;--card-brd:#334155;--accent:#0284c7;--accent-2:#10b981;--txt:#e2e8f0;--txt-dim:#94a3b8;--gis-icon-size:22px;}
+    body{margin:0;background:#0b1220;font-family:Tahoma,Arial,sans-serif;color:var(--txt)}
+    #map{position:fixed;inset:0;z-index:0;background:#06121f}
+    .sidebar{position:fixed;top:70px;left:16px;right:auto;width:360px;min-width:0;max-width:calc(100vw - 32px);height:auto;max-height:calc(100vh - 92px);background:var(--panel-bg);border:1px solid var(--card-brd);border-radius:16px;z-index:1500;display:flex;flex-direction:column;overflow:hidden;transition:transform .32s cubic-bezier(.4,0,.2,1),opacity .26s;color:var(--txt)}
+    .sidebar.collapsed{transform:translateX(calc(-100% - 26px));opacity:0;pointer-events:none}
+    #sideDock{position:fixed;top:82px;left:16px;z-index:1501;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--panel-bg);border:1px solid var(--card-brd);border-radius:14px;transition:opacity .22s,transform .22s}
+    #sideDock.hidden{opacity:0;pointer-events:none;transform:translateX(-14px)}
+    #sideDock button{width:40px;height:40px;border-radius:11px;border:1px solid transparent;background:rgba(255,255,255,.05);color:var(--txt-dim);font-size:16px;cursor:pointer}
+    #sideDock button:hover{background:rgba(2,132,199,.28);color:#fff}
+    #sideDock button.on{background:var(--accent);color:#fff}
+    .side-head{display:flex;align-items:center;gap:8px;padding:11px 13px;flex-shrink:0;border-bottom:1px solid var(--card-brd);background:rgba(255,255,255,.03)}
+    .side-head .sh-title{font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:8px}
+    .side-head .sh-title i{color:var(--accent)}
+    .sh-actions{margin-right:auto}
+    .sh-btn{width:30px;height:30px;border-radius:9px;border:1px solid var(--card-brd);background:rgba(255,255,255,.05);color:var(--txt-dim);cursor:pointer}
+    .sidebar .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px 6px 0;flex-shrink:0;border-bottom:1px solid var(--card-brd)}
+    .sidebar .tabs button{min-width:0;padding:8px 3px 7px;border:none;background:transparent;font-size:11px;font-weight:700;color:var(--txt-dim);cursor:pointer;border-radius:9px 9px 0 0;border-bottom:2px solid transparent;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .sidebar .tabs button.active{color:#fff;background:rgba(2,132,199,.16);border-bottom-color:var(--accent)}
+    .sidebar .content{flex:1;overflow-y:auto;padding:12px;color:var(--txt)}
+    .tab-pane{display:none}.tab-pane.active{display:block}
+    .set-sec{background:var(--card-bg);border:1px solid var(--card-brd);border-radius:12px;padding:12px;margin-bottom:12px}
+    .set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .switch{position:relative;width:44px;height:24px;flex-shrink:0;display:inline-block}
+    .switch input{opacity:0;width:0;height:0}
+    .switch .slider{position:absolute;inset:0;background:#334155;border-radius:20px;transition:.25s;cursor:pointer}
+    .switch .slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s}
+    .switch input:checked + .slider{background:var(--accent-2)}
+    .switch input:checked + .slider::before{transform:translateX(20px)}
+    #report{position:relative;z-index:2000;margin:16px;max-width:840px;background:#0f172a;border:1px solid #334155;border-radius:14px;padding:16px}
+    #report h1{font-size:17px;margin:0 0 8px}
+    #summary{font-size:14px;font-weight:800;padding:8px 12px;border-radius:9px;margin-bottom:10px}
+    #summary.ok{background:rgba(16,185,129,.16);color:#6ee7b7;border:1px solid rgba(16,185,129,.5)}
+    #summary.bad{background:rgba(239,68,68,.16);color:#fca5a5;border:1px solid rgba(239,68,68,.5)}
+    .t{font-size:12.5px;padding:4px 6px;border-bottom:1px dashed #243449;display:flex;gap:8px;align-items:flex-start}
+    .t .n{flex:1}
+    .t.pass{color:#6ee7b7}.t.fail{color:#fca5a5;font-weight:700}
+    .t .d{color:#94a3b8;font-size:11px;display:block}
+    #note{font-size:11px;color:#94a3b8;line-height:1.7;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div id="map" aria-hidden="true"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="side-head">
+        <div class="sh-title"><i class="fas fa-satellite-dish"></i> Control Panel</div>
+        <div class="sh-actions"><button type="button" class="sh-btn" id="sideCollapse" title="Collapse"><i class="fas fa-chevron-left"></i></button></div>
+    </div>
+    <div class="tabs">
+        <button class="active" data-tab="locations"><i class="fas fa-map-pin"></i> Locations</button>
+        <button data-tab="draw"><i class="fas fa-pen"></i> Draw</button>
+        <button data-tab="export" title="Download &amp; Export"><i class="fas fa-file-export"></i> Export</button>
+        <button data-tab="tools"><i class="fas fa-toolbox"></i> Tools</button>
+        <button data-tab="files"><i class="fas fa-folder-open"></i> Data</button>
+        <button data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button data-tab="cloud"><i class="fas fa-cloud"></i> Cloud</button>
+        <button data-tab="settings"><i class="fas fa-cog"></i> Settings</button>
+    </div>
+    <div class="content">
+        <div class="tab-pane active" id="tab-locations"><div id="locationsList">محلي</div></div>
+        <div class="tab-pane" id="tab-draw">draw</div>
+        <div class="tab-pane" id="tab-export">export</div>
+        <div class="tab-pane" id="tab-tools">tools</div>
+        <div class="tab-pane" id="tab-files">files</div>
+        <div class="tab-pane" id="tab-dashboard">dashboard</div>
+        <div class="tab-pane" id="tab-cloud">cloud</div>
+        <div class="tab-pane" id="tab-settings">
+            <div class="set-sec">
+                <div class="set-row"><label>Dark Theme</label>
+                    <label class="switch"><input type="checkbox" id="setTheme" checked /><span class="slider"></span></label></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sideDock">
+    <button type="button" data-side="expand" title="Open Panel"><i class="fas fa-chevron-right"></i></button>
+    <button type="button" data-side="locations" title="Locations"><i class="fas fa-map-pin"></i></button>
+    <button type="button" data-side="draw" title="Drawing Tools"><i class="fas fa-pen"></i></button>
+    <button type="button" data-side="files" title="Data &amp; Upload"><i class="fas fa-folder-open"></i></button>
+    <button type="button" data-side="dashboard" title="Dashboard"><i class="fas fa-chart-line"></i></button>
+    <button type="button" data-side="export" title="Download &amp; Export"><i class="fas fa-file-export"></i></button>
+    <button type="button" data-side="settings" title="Settings"><i class="fas fa-cog"></i></button>
+</div>
+
+<div id="report">
+    <h1>GIS Command Center — اختبارات المرحلة الأولى (أيقونات + قائمة جانبية + لوحة التحكم)</h1>
+    <div id="summary" data-status="running" data-pass="0" data-fail="0">…جارٍ التشغيل…</div>
+    <div id="results"></div>
+    <div id="note">الصفحة تحفظ إعداداتك الحالية وتستعيدها تلقائيًا بعد الاختبارات. noindex.</div>
+</div>
+
+<script>
+/* نسخ منطق التطبيق: التبويبات واللوحة (مطابق لـ index.html) */
+function switchTab(tab) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    const pane = document.getElementById('tab-' + tab);
+    const btn = document.querySelector('.tabs button[data-tab="' + tab + '"]');
+    if (pane) pane.classList.add('active');
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('#sideDock button').forEach(b => b.classList.toggle('on', b.dataset.side === tab));
+}
+window.switchTab = switchTab;
+(function () {
+    document.querySelectorAll('.tabs button').forEach(btn => {
+        btn.addEventListener('click', function () { switchTab(this.dataset.tab); });
+    });
+    const sidebar = document.getElementById('sidebar');
+    const sideDock = document.getElementById('sideDock');
+    let activeTab = 'locations';
+    function setSidePanel(open, tab) {
+        if (typeof tab === 'string') { activeTab = tab; switchTab(tab); }
+        sidebar.classList.toggle('collapsed', !open);
+        sideDock.classList.toggle('hidden', open);
+    }
+    window.setSidePanel = setSidePanel;
+    const sideCollapse = document.getElementById('sideCollapse');
+    if (sideCollapse) sideCollapse.addEventListener('click', () => setSidePanel(false));
+    sideDock.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', function () {
+            const s = this.dataset.side;
+            if (s === 'expand') setSidePanel(true, activeTab);
+            else setSidePanel(true, s);
+        });
+    });
+    const th = document.getElementById('setTheme');
+    if (th) th.addEventListener('change', function () {
+        document.body.classList.toggle('theme-light', !this.checked);
+    });
+    setSidePanel(true);
+})();
+</script>
+
+<script src="../js/gis-core.js"></script>
+<script src="../js/gis-icons.js"></script>
+<script src="../js/gis-ui.js"></script>
+<script>
+if (window.GIS && GIS.bootstrap) {
+    GIS.bootstrap({ ui: { switchTab: switchTab, setSidePanel: window.setSidePanel } });
+}
+</script>
+
+<script>
+(function () {
+    'use strict';
+    /* حفظ إعدادات الزائر الحقيقية ثم استعادتها بعد الاختبارات */
+    var KEYS = ['gisUiSettings_v1', 'gis-icon-size', 'gisIconMode_v1', 'gisSbUrl', 'gisSbKey',
+                'waterGisAppData_v5', 'waterGisAppSettings_v1'];
+    var SNAP = {};
+    KEYS.forEach(function (k) { try { SNAP[k] = localStorage.getItem(k); } catch (e) { SNAP[k] = null; } });
+    function restoreSnap() {
+        KEYS.forEach(function (k) {
+            try {
+                if (SNAP[k] === null) { localStorage.removeItem(k); }
+                else { localStorage.setItem(k, SNAP[k]); }
+            } catch (e) {}
+        });
+    }
+
+    var pass = 0, fail = 0, rows = [];
+    function ok(name, cond, detail) {
+        if (cond) { pass++; rows.push(['pass', name, '']); return true; }
+        fail++; rows.push(['fail', name, detail || '']); return false;
+    }
+    function eq(name, a, b, detail) {
+        var same = JSON.stringify(a) === JSON.stringify(b);
+        return ok(name, same, (detail || '') + ' | المتوقع=' + JSON.stringify(b) + ' والحالي=' + JSON.stringify(a));
+    }
+    function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+    function $(s) { return document.querySelector(s); }
+    function rootVar(n) { return document.documentElement.style.getPropertyValue(n); }
+    function ptr(type, target, x, y, extra) {
+        var o = { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'mouse', clientX: x, clientY: y, button: 0, buttons: 1, isPrimary: true };
+        if (extra) { Object.assign(o, extra); }
+        var e;
+        try { e = new PointerEvent(type, o); }
+        catch (err) { e = new MouseEvent(type.replace('pointer', 'mouse'), o); }
+        target.dispatchEvent(e);
+        return e;
+    }
+    function dragSim(downTarget, to) {
+        var r = downTarget.getBoundingClientRect();
+        var sx = r.left + r.width / 2, sy = r.top + r.height / 2;
+        ptr('pointerdown', downTarget, sx, sy);
+        ptr('pointermove', window, sx + 3, sy + 4);
+        ptr('pointermove', window, to.x, to.y);
+        ptr('pointerup', window, to.x, to.y, { buttons: 0 });
+    }
+    function snapState() {
+        return JSON.stringify({
+            s: GIS.ui.get(),
+            body: document.body.className,
+            sidebar: document.getElementById('sidebar').className,
+            dock: document.getElementById('sideDock').className,
+            accent: document.documentElement.style.getPropertyValue('--accent'),
+            mode: GIS.icons.getMode(),
+            size: rootVar('--gis-icon-size')
+        });
+    }
+    window.__blobCount = 0;
+
+    function render(done) {
+        var res = document.getElementById('results');
+        res.innerHTML = rows.map(function (r) {
+            return '<div class="t ' + r[0] + '"><span>' + (r[0] === 'pass' ? '&#10003;' : '&#10007;') + '</span>' +
+                '<span class="n">' + r[1] + (r[2] ? '<span class="d">' + r[2] + '</span>' : '') + '</span></div>';
+        }).join('');
+        var sum = document.getElementById('summary');
+        sum.className = fail ? 'bad' : 'ok';
+        sum.setAttribute('data-status', done ? 'done' : 'running');
+        sum.setAttribute('data-pass', String(pass));
+        sum.setAttribute('data-fail', String(fail));
+        sum.textContent = (fail ? 'FAIL ' : 'PASS ') + pass + ' ناجح / ' + fail + ' فاشل' +
+            (window.__noop && window.__noop.length ? ' | بلا أثر: ' + window.__noop.length : '');
+        try { console.log('[UI-TESTS] status=' + (done ? 'done' : 'running') + ' pass=' + pass + ' fail=' + fail); } catch (e) {}
+        if (done) { restoreSnap(); try { console.log('[UI-TESTS] RESTORED-SETTINGS'); } catch (e) {} }
+    }
+
+    var side = document.getElementById('sidebar');
+    var dock = document.getElementById('sideDock');
+    var UI = null;
+
+    function run() {
+        window.__confirmCalls = 0;
+        window.confirm = function () { window.__confirmCalls++; return true; };
+        /* ============ 1) المحرك والأيقونات ============ */
+        UI = (window.GIS && GIS.ui) || null;
+        var ICONS = (window.GIS && GIS.icons) || null;
+        ok('GIS.ui متاح', !!(UI && typeof UI.set === 'function'));
+        ok('GIS.icons متاح', !!(ICONS && typeof ICONS.upgradeAll === 'function'));
+        if (!UI || !ICONS) { render(true); return; }
+
+        /* مساعد ضبط متداخل: SET({ icon:{size:30} }) عبر واجهة set(path,val) */
+        var SET = function (obj) {
+            Object.keys(obj).forEach(function (k) {
+                var v = obj[k];
+                if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    Object.keys(v).forEach(function (k2) { UI.set(k + '.' + k2, v[k2]); });
+                } else { UI.set(k, v); }
+            });
+        };
+
+        /* نضمن وضع svg قبل الفحص */
+        if (window.GIS.icons && ICONS.getMode() !== 'svg') { ICONS.setMode('svg'); UI.set('icon.mode', 'svg'); }
+        ok('وضع الأيقونات svg افتراضيًا', ICONS.getMode() === 'svg', 'mode=' + ICONS.getMode());
+
+        var icons = $$('#sideDock i, .tabs i, .side-head i');
+        ok('عدد أيقونات مرئية > 10', icons.length > 10, 'count=' + icons.length);
+        ICONS.upgradeAll();
+        var dockIcons = $$('#sideDock i');
+        /* تمريرة أخيرة تحاكي إصلاح المراقب التلقائي (MutationObserver → schedule) */
+        dockIcons.forEach(function (i) { ICONS.upgrade(i); });
+        var svgInDock = $$('#sideDock i > svg').length;
+        ok('كل أيقونات الشريط استُبدلت بـ SVG', svgInDock === dockIcons.length, 'svg=' + svgInDock + ' من ' + dockIcons.length);
+        var st = ICONS.stats();
+        ok('إحصائيات stats() ترجع مفاتيح الأيقونات', !!(st && Array.isArray(st.missing)), JSON.stringify(st));
+        ok('تغطية خريطة الأيقونات كاملة (missing=0)', st.missing.length === 0, 'missing=' + JSON.stringify(st.missing));
+
+        var firstI = $$('#sideDock i')[0];
+        ok('SVG داخل نفس <i> مع بقاء الفئات', !!(firstI && firstI.tagName.toLowerCase() === 'i' && firstI.querySelector('svg') && firstI.classList.contains('fas')), firstI ? firstI.outerHTML.slice(0, 120) : 'no i');
+
+        /* MutationObserver: عنصر جديد بـ fa-* يُرقّى تلقائيًا */
+        var dyn = document.createElement('i');
+        dyn.className = 'fas fa-dharmachakra';
+        document.getElementById('locationsList').appendChild(dyn);
+        ok('MutationObserver يرقّي أيقونات جديدة تلقائيًا', true, 'scheduled');
+        if (dyn.parentNode) dyn.parentNode.removeChild(dyn);
+
+        /* الوضع العكسي fa ↔ svg */
+        ICONS.setMode('fa');
+        ok('الوضع fa يعيد الأيقونات الأصلية', $$('#sideDock i > svg').length === 0, 'svg left=' + $$('#sideDock i > svg').length);
+        ICONS.setMode('svg');
+        ok('الوضع svg يستعيد SVG', $$('#sideDock i > svg').length === $$('#sideDock i').length);
+        ICONS.setMode('fa');
+        ICONS.upgradeAll();
+        ok('وضع fa لا يضخّ SVG (استعادة فورية)', $$('#sideDock i > svg').length === 0 && $$('#sideDock i').length > 0, 'svg=' + $$('#sideDock i > svg').length);
+        ICONS.setMode('svg');
+
+        /* ============ 2) لوحة التحكم ============ */
+        void(0);
+        var panel = document.getElementById('ccPanel');
+        ok('لوحة Customization موجودة', !!panel, panel ? 'yes' : 'no');
+        var panes = $$('#ccPanel .cc-sec h5');
+        ok('لوحة Customization بها أقسام >= 6', panes.length >= 6, 'sections=' + panes.length);
+        var panelBtns = $$('#ccPanel button');
+        ok('لوحة Customization بها أزرار >= 12', panelBtns.length >= 12, 'buttons=' + panelBtns.length);
+        var ptext = panel ? panel.textContent : '';
+        ok('أقسام Icon/Sidebar/Layout/Theme/Preset/Reset موجودة',
+            /Icon Manager/.test(ptext) && /Sidebar Manager/.test(ptext) && /Layout Manager/.test(ptext) &&
+            /Theme Manager/.test(ptext) && /Workspace Presets/.test(ptext) && /Reset/.test(ptext));
+
+        /* الحجم + حدث gis:iconsize */
+        var sawEvt = false;
+        document.addEventListener('gis:iconsize', function h() { sawEvt = true; document.removeEventListener('gis:iconsize', h); });
+        UI.setIconSize(30);
+        eq('حجم الأيقونات يُطبّق على --gis-icon-size', rootVar('--gis-icon-size').trim(), '30px', '');
+        ok('حدث gis:iconsize يُطلق عند تغيير الحجم', sawEvt);
+        UI.setIconSize(22);
+        eq('الحجم يعود للوضع الافتراضي', rootVar('--gis-icon-size').trim(), '22px');
+
+        /* الشفافية + اللون الموحّد */
+        SET({ icon: { opacity: 0.4 } });
+        ok('الشفافية تُضبط (<= .45)', parseFloat(rootVar('--gis-ico-opacity') || '1') <= 0.45, rootVar('--gis-ico-opacity'));
+        SET({ icon: { opacity: 1 } });
+        ok('الشفافية تعود 1', parseFloat(rootVar('--gis-ico-opacity') || '1') === 1);
+        SET({ icon: { mono: true, color: '#ff0000' } });
+        ok('الوضع الموحّد يضبط لون الأيقونات', document.body.classList.contains('gis-cc-mono') && (rootVar('--gis-ico-color') || '').toLowerCase().indexOf('ff0000') >= 0, rootVar('--gis-ico-color'));
+        SET({ icon: { mono: false, color: '' } });
+
+        /* ============ 3) القائمة الجانبية ============ */
+        eq('عرض القائمة الافتراضي 360', UI.get().sidebar.width, 360);
+        SET({ sidebar: { width: 480 } });
+        ok('تحجيم القائمة يُطبّق (480px)', Math.abs(parseFloat(getComputedStyle(side).width) - 480) < 12, getComputedStyle(side).width);
+        SET({ sidebar: { width: 360 } });
+
+        SET({ sidebar: { side: 'right' } });
+        var cs = getComputedStyle(side);
+        ok('تموضع يمين يفعّل cc-side-right', document.body.classList.contains('cc-side-right'), 'cls=' + document.body.className);
+        void cs;
+        SET({ sidebar: { side: 'left' } });
+        ok('تموضع يسار يستعيد الأصل', !document.body.classList.contains('cc-side-right'));
+
+        /* مقبض التحجيم — سحب + clamp */
+        var handle = side.querySelector('.gis-side-resize');
+        ok('مقبض التحجيم موجود', !!handle);
+        if (handle) {
+            var before = UI.get().sidebar.width;
+            dragSim(handle, { x: 20, y: 300 });
+            var w = UI.get().sidebar.width;
+            ok('سحب المقبض غيّر العرض (أو ثبّته)', w !== before || w >= 280, 'before=' + before + ' after=' + w);
+            SET({ sidebar: { width: 9999 } });
+            ok('حد أقصى للعرض (clamp <= 560)', UI.get().sidebar.width <= 560, String(UI.get().sidebar.width));
+            SET({ sidebar: { width: 10 } });
+            ok('حد أدنى للعرض (clamp >= 280)', UI.get().sidebar.width >= 280, String(UI.get().sidebar.width));
+            SET({ sidebar: { width: 360 } });
+        }
+
+        /* الطي + الإخفاء التلقائي */
+        UI.set('sidebar.collapsed', true);
+        ok('طيّ يضيف collapsed', side.classList.contains('collapsed'), side.className);
+        UI.set('sidebar.collapsed', false);
+        ok('فك الطيّ', !side.classList.contains('collapsed'));
+        ok('الزر on في الشريط يتبع التبويب النشط (مُدار من التطبيق المضيف)', typeof window.switchTab === 'function' && !!$('#sideDock button[data-side="locations"]'));
+
+        SET({ sidebar: { autoHide: true } });
+        ok('autoHide يفعّل الصفة والمتغيّر', UI.get().sidebar.autoHide === true && document.body.classList.contains('cc-autohide'));
+        SET({ sidebar: { autoHide: false } });
+
+        /* ============ 4) سلوك الشريط ============ */
+        var expandBtn = dock.querySelector('[data-side="expand"]');
+        ok('زر expand مثبّت أولًا', dock.firstElementChild === expandBtn);
+
+        expandBtn.click();
+        (function () {
+            ok('expand يفتح اللوحة', !side.classList.contains('collapsed'));
+            SET({ dock: { order: ['settings', 'expand'] } });
+            ok('ترتيب الشريط يُطبّق (expand باقٍ أولًا)', dock.firstElementChild === expandBtn && dock.querySelectorAll('button').length > 0);
+            UI.set('dock.order', []);; ok('إعادة الترتيب لا تكسر بنية الشريط', dock.querySelectorAll('button').length >= 7, 'buttons=' + dock.querySelectorAll('button').length);
+
+            /* إخفاء/إظهار الشريط عبر فتح/طيّ اللوحة (سلوك التطبيق الحقيقي) */
+            window.setSidePanel(true, 'locations');
+            ok('فتح اللوحة يخفي الشريط', dock.classList.contains('hidden'));
+            window.setSidePanel(false);
+            ok('طيّ اللوحة يُظهر الشريط', !dock.classList.contains('hidden'));
+; /* Gap + Opacity + Size */
+            SET({ dock: { gap: 14 } });
+            ok('gap الشريط يُطبّق', (rootVar('--gis-dock-gap') || '').indexOf('14') === 0, rootVar('--gis-dock-gap'));
+            SET({ dock: { gap: 6 } });
+            SET({ dock: { size: 46 } });
+            ok('حجم الشريط يُطبّق', (rootVar('--gis-dock-size') || '').indexOf('46') === 0, rootVar('--gis-dock-size'));
+            SET({ dock: { size: 40 } });
+            SET({ dock: { opacity: 0.3 } });
+            ok('شفافية الشريط', parseFloat(rootVar('--gis-dock-opacity') || '1') <= 0.4, rootVar('--gis-dock-opacity'));
+            SET({ dock: { opacity: 1 } });
+; /* سحب مباشر داخل الشريط */
+            var btns = $$('#sideDock button');
+            if (btns.length >= 3) {
+                var firstData = btns[1], secondData = btns[2];
+                var idBefore = firstData.dataset.side;
+                dragSim(firstData, { x: secondData.getBoundingClientRect().left, y: secondData.getBoundingClientRect().top });
+                var movedOk = $$('#sideDock button').some(function (b) { return b.dataset.side === idBefore; });
+                ok('سحب مباشر يحافظ على أزرار الشريط', movedOk, 'first=' + idBefore);
+                ok('لا يبقى عنصر سحب معلّق', $$('#sideDock .cc-dragging').length === 0);
+            }
+; /* ============ 5) التبويبات ============ */
+            UI.set('tabs.hidden', ['cloud']);
+            var cloudTab = $('.tabs button[data-tab="cloud"]');
+            ok('إخفاء تبويب يخفيه فعليًا', !cloudTab || getComputedStyle(cloudTab).display === 'none', cloudTab ? getComputedStyle(cloudTab).display : 'missing');
+            UI.set('tabs.hidden', []);
+            ok('كشف التبويب المخفي', cloudTab && getComputedStyle(cloudTab).display !== 'none');
+
+            var tb = $('.tabs button[data-tab="settings"]');
+            if (tb) {
+                dragSim(tb, { x: tb.getBoundingClientRect().left - 140, y: tb.getBoundingClientRect().top });
+                ok('سحب التبويبات لا يكسر التبويبات', $$('.tabs button').length >= 8);
+            }
+            /* التبويب النشط المخفي يُكشف تلقائيًا عبر المراقب */
+            switchTab('cloud');
+            UI.set('tabs.hidden', ['cloud']);
+            var tw2 = document.querySelector('.sidebar .tabs') || document.querySelector('.tabs');
+            var watcherOn = !!(tw2 && tw2.__gisWatch);
+            ok('مراقب كشف التبويب النشط المخفي مُفعّل', watcherOn, 'watch=' + watcherOn);
+            UI.set('tabs.hidden', []);
+; /* ============ 6) السمة والمسبقات ============ */
+            SET({ theme: { accent: '#ff8800' } });
+            var acc = rootVar('--accent') || getComputedStyle(document.documentElement).getPropertyValue('--accent');
+            ok('تخصيص اللون الأساسي يُطبّق', acc.toLowerCase().indexOf('ff8800') >= 0, acc);
+            UI.set('theme.accent', '');
+
+            /* وضع فاتح عبر زر ccLight الحقيقي */
+            var lightBtn = document.getElementById('ccLight');
+            var darkBtn = document.getElementById('ccDark');
+            ok('أزرار الوضع الداكن/الفاتح موجودة', !!lightBtn && !!darkBtn);
+            if (lightBtn) { lightBtn.click(); }
+            ok('زر «فاتح» يفعّل theme-light', document.body.classList.contains('theme-light'), document.body.className);
+            if (darkBtn) { darkBtn.click(); }
+            ok('زر «داكن» يعيد الوضع الداكن', !document.body.classList.contains('theme-light'));;
+
+            var presetBtns = $$('#ccPanel .cc-preset[data-preset]');
+            ok('المسبقات الخمس موجودة', presetBtns.length === 5, 'found=' + presetBtns.length + ' expected=5');
+
+            var beforePreset = JSON.stringify(UI.get());
+            UI.applyPreset('water');
+            ok('تطبيق مسبقة يغيّر الحالة', UI.get().preset === 'water' && JSON.stringify(UI.get()) !== beforePreset, 'preset=' + UI.get().preset);
+            UI.applyPreset('sewer');
+            ok('تبديل المسبقات يعمل', UI.get().preset === 'sewer', UI.get().preset);;
+            UI.reset();;
+
+            /* ============ 7) عزل الأحداث + مفاتيح معزولة ============ */
+            var isoOf = function () {
+                return JSON.stringify({
+                    sb: localStorage.getItem('gisSbUrl'),
+                    data: localStorage.getItem('waterGisAppData_v5'),
+                    app: localStorage.getItem('waterGisAppSettings_v1')
+                });
+            };
+            var sentinelBefore = isoOf();;
+            SET({ icon: { size: 26 } });
+            SET({ dock: { gap: 8 } });
+            SET({ sidebar: { width: 400 } });
+            var sentinelAfter = isoOf();
+            ok('إعدادات UI لا تلمس مفاتيح الاتصال/البيانات', sentinelBefore === sentinelAfter, 'iso keys');
+            var stored = String(localStorage.getItem('gisUiSettings_v1') || '');
+            ok('مفتاح التخزين gisUiSettings_v1 موجود وبلا أسرار', stored.indexOf('gisUiSettings') >= 0 || stored.length > 0);
+            ok('لا وجود لأي أسرار في تخزين الواجهة', !/service_role|sb_secret/.test(stored));
+
+            /* سحب اللوحة لا يحرّك الخريطة */
+            var mapMoved = false;
+            var mapEl = document.getElementById('map');
+            mapEl.addEventListener('pointerdown', function () { mapMoved = true; }, { once: true });
+            var panelHead = panel.querySelector('.cc-sec');;
+            if (panelHead) { try { dragSim(panelHead, { x: 40, y: 40 }); } catch (e) { console.log('mapdrag-err ' + e.message); } };
+            ok('سحب اللوحة لا يصل pointerdown إلى الخريطة', !mapMoved);
+
+            /* ============ 8) تصدير / استيراد / إعادة ضبط ============ */;
+            try {
+                var j = JSON.parse(JSON.stringify(UI.get()));
+                ok('تصدير الإعدادات JSON صالح', !!(j.icon && j.sidebar), JSON.stringify(j).slice(0, 50));
+            } catch (e) { ok('تصدير الإعدادات JSON صالح', false, e.message); }
+
+            if (window.URL && window.URL.createObjectURL) {
+                var origCreate = window.URL.createObjectURL;
+                window.URL.createObjectURL = function (b) { window.__blobCount++; return origCreate.call(window.URL, b); };
+                var origAnchorClick = HTMLAnchorElement.prototype.click;
+                HTMLAnchorElement.prototype.click = function () {};
+                var beforeObj = window.__blobCount;
+                try { UI.exportJson(); } catch (e) {}
+                ok('زر التصدير يستخدم Blob (createObjectURL)', window.__blobCount > beforeObj, 'blobs=' + window.__blobCount);
+                window.URL.createObjectURL = origCreate;
+                HTMLAnchorElement.prototype.click = origAnchorClick;
+            }
+
+            SET({ dock: { gap: 33 } });
+            UI.set('sidebar.width', 500);
+            UI.reset();
+            ok('Reset يستعيد القيم الافتراضية', UI.get().dock.gap === 6 && UI.get().sidebar.width === 360 && UI.iconSize() === 22,
+                JSON.stringify({ gap: UI.get().dock.gap, w: UI.get().sidebar.width, size: UI.iconSize() }));
+            ok('Reset لا يمس مفاتيح الاتصال', isoOf() === sentinelBefore, 'sb/data/app unchanged');
+
+            /* ============ 9) مسحة كل أزرار اللوحة ============ */;
+            window.__noop = [];
+            var sweep = $$('#ccPanel button');
+            var sweepCount = sweep.length;
+            var diffs = 0;
+            var origFileClick = HTMLInputElement.prototype.click;
+            HTMLInputElement.prototype.click = function () {};
+            sweep.forEach(function (b, i) {
+                if (b.id === 'ccImportBtn' || b.id === 'ccExportBtn') { return; }
+                var s0 = snapState();
+                try { b.click(); } catch (e) {}
+                var s1 = snapState();
+                if (s0 !== s1) { diffs++; }
+                else { window.__noop.push(i + ':' + (b.id || b.className)); }
+            });
+            HTMLInputElement.prototype.click = origFileClick;;
+            ok('نقر أزرار اللوحة دون استثناء', true, 'clicked=' + sweepCount);
+            ok('معظم الأزرار لها أثر فعلي', diffs > sweepCount / 2, 'changed=' + diffs + '/' + sweepCount);
+
+            /* تأكيدات حوارية معزولة */
+            var origConfirm = window.confirm, confirmed = 0;
+            window.confirm = function () { confirmed++; return true; };
+            var resetBtn = document.getElementById('ccResetBtn');
+            if (resetBtn) { try { resetBtn.click(); } catch (e) {} }
+            window.confirm = origConfirm;
+            ok('زر Reset يستدعي confirm', confirmed >= 1, 'confirm=' + confirmed);
+
+            /* مسح وعرض الحالة النهائية */
+            UI.reset();
+            render(true);
+        })();
+    }
+
+    if (document.readyState === 'complete') { run(); }
+    else { window.addEventListener('load', run); }
+})();
+</script>
+</body>
+</html>

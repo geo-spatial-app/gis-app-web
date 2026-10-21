@@ -1,0 +1,233 @@
+/* ================================================================
+   GIS Command Center — تنسيقات الواجهة الاحترافية
+   الإصدار: 1.0.0  (تُحمَّل بعد التنسيقات الرئيسية لتفوز عند التساوي)
+   Dark Glass · Cyan/Navy · أيقونات SVG · قائمة جانبية قابلة للتخصيص
+   لا تلمس أي تنسيقات وظائف قائمة — تضيف فقط فوقها.
+   ================================================================ */
+
+/* ============ 1) محرك الأيقونات SVG ============ */
+i.gis-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-style: normal;
+    vertical-align: middle;
+    opacity: var(--gis-ico-opacity, 1);
+}
+i.gis-ico::before { content: none !important; display: none !important; }
+i.gis-ico svg.gis-ico-svg {
+    width: 1.1em;
+    height: 1.1em;
+    display: block;
+    flex: none;
+    overflow: visible;
+}
+body.gis-cc-mono i.gis-ico { color: var(--gis-ico-color, var(--txt, #e2e8f0)) !important; }
+
+/* حالات الأيقونات: تحميل / تعطيل / نشِط */
+i.gis-ico.gis-spin svg,
+button.is-loading i.gis-ico svg,
+.is-loading > i.gis-ico svg {
+    animation: cc-spin 1s linear infinite;
+}
+@keyframes cc-spin { to { transform: rotate(360deg); } }
+button[disabled] i.gis-ico,
+button.is-loading i.gis-ico { opacity: .45; filter: grayscale(.55); }
+button:disabled { cursor: not-allowed; }
+
+/* ============ 2) الهوية البصرية Dark Glass · Cyan/Navy ============ */
+body.gis-cc #sideDock button {
+    width: var(--gis-dock-size, 40px);
+    height: var(--gis-dock-size, 40px);
+    gap: var(--gis-dock-gap, 0px);
+}
+body.gis-cc #sideDock {
+    gap: var(--gis-dock-gap, 6px);
+    opacity: var(--gis-dock-opacity, 1);
+    border-color: rgba(34, 211, 238, .22);
+    box-shadow: 0 12px 34px rgba(2, 132, 199, .28);
+}
+body.gis-cc #sideDock button.on {
+    background: linear-gradient(160deg, var(--accent, #0284c7), #0e7490);
+    color: #fff;
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, .35), 0 6px 18px rgba(2, 132, 199, .4);
+}
+body.gis-cc.cc-glow-off #sideDock button.on,
+body.gis-cc.cc-glow-off .sidebar .tabs button.active { box-shadow: none; }
+body.gis-cc.cc-glow-strong #sideDock button.on {
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, .55), 0 0 22px rgba(34, 211, 238, .5);
+}
+body.gis-cc .sidebar .tabs button.active {
+    box-shadow: inset 0 -2px 0 var(--accent, #0284c7), 0 6px 16px rgba(2, 132, 199, .16);
+}
+body.gis-cc.cc-glow-strong .sidebar .tabs button.active {
+    box-shadow: inset 0 -2px 0 #22d3ee, 0 0 16px rgba(34, 211, 238, .35);
+}
+body.gis-cc .sidebar { border-color: rgba(34, 211, 238, .20); }
+body.gis-cc .side-head .sh-title i { color: #22d3ee; }
+
+/* ============ 3) القائمة الجانبية: العرض/التموضع/التحجيم ============ */
+body.gis-cc .sidebar {
+    width: var(--sidebar-w, 360px);
+    max-width: calc(100vw - 32px);
+}
+body.gis-cc.cc-side-right .sidebar { left: auto; right: 16px; }
+body.gis-cc.cc-side-right .sidebar.collapsed { transform: translateX(calc(100% + 26px)); }
+body.gis-cc.cc-side-right #sideDock { left: auto; right: 16px; }
+body.gis-cc.cc-side-right #sideDock.hidden { transform: translateX(14px); }
+
+/* مقبض التحجيم على حافة اللوحة */
+.gis-side-resize {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    width: 10px;
+    right: -5px;
+    z-index: 6;
+    cursor: col-resize;
+    border-radius: 8px;
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, .22));
+    touch-action: none;
+    transition: background .18s ease;
+}
+.gis-side-resize:hover,
+.gis-side-resize.cc-resizing {
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, .75));
+    box-shadow: 0 0 12px rgba(34, 211, 238, .45);
+}
+body.gis-cc.cc-side-right .gis-side-resize { right: auto; left: -5px; background: linear-gradient(90deg, rgba(34, 211, 238, .22), transparent); }
+body.gis-cc.cc-side-right .gis-side-resize:hover,
+body.gis-cc.cc-side-right .gis-side-resize.cc-resizing { background: linear-gradient(90deg, rgba(34, 211, 238, .75), transparent); }
+.gis-side-resize.cc-resizing { user-select: none; }
+body.gis-cc.cc-resizing, body.gis-cc.cc-resizing * { user-select: none !important; }
+
+/* إخفاء تلقائي */
+body.gis-cc.cc-autohide .sidebar { transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .22s; }
+
+/* ============ 4) إخفاء/ترتيب عناصر الشريط والتبويبات ============ */
+#sideDock button.cc-hidden,
+.sidebar .tabs button.cc-hidden { display: none !important; }
+#sideDock button.cc-dragging { opacity: .4; transform: scale(.9); pointer-events: none; }
+#sideDock button.cc-drop { outline: 2px dashed #22d3ee; outline-offset: -2px; }
+.sidebar .tabs button.cc-dragging { opacity: .4; pointer-events: none; }
+.sidebar .tabs button.cc-drop { outline: 2px dashed #22d3ee; outline-offset: -3px; }
+
+/* ============ 5) لوحة تحكم تخصيص الواجهة ============ */
+.cc-sec {
+    background: var(--card-bg, #1e293b);
+    border: 1px solid var(--card-brd, #334155);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+.cc-sec h5 {
+    font-size: 12.5px;
+    color: var(--txt, #e2e8f0);
+    margin-bottom: 11px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.cc-sec h5 i { color: #22d3ee; }
+.cc-sec h5 .cc-badge {
+    margin-inline-start: auto;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(34, 211, 238, .14);
+    color: #67e8f9;
+    border: 1px solid rgba(34, 211, 238, .35);
+}
+.cc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.cc-row:last-child { margin-bottom: 0; }
+.cc-row > label { font-size: 12px; color: var(--txt-dim, #94a3b8); }
+.cc-slider-row { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.cc-slider-row > label { font-size: 12px; color: var(--txt-dim, #94a3b8); min-width: 96px; }
+.cc-slider-row input[type=range] { flex: 1; min-width: 0; accent-color: #22d3ee; }
+.cc-val { font-size: 11px; font-weight: 800; color: #67e8f9; min-width: 44px; text-align: center; background: rgba(34,211,238,.10); border: 1px solid rgba(34,211,238,.25); border-radius: 7px; padding: 2px 4px; }
+.cc-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; padding: 9px 10px;
+    border: 1px solid var(--card-brd, #334155);
+    background: rgba(255,255,255,.05);
+    color: var(--txt, #e2e8f0);
+    border-radius: 9px; font-family: inherit; font-size: 12.5px; font-weight: 700;
+    cursor: pointer; transition: .18s; margin-top: 6px;
+}
+.cc-btn:hover { background: rgba(34, 211, 238, .18); border-color: #22d3ee; }
+.cc-btn.on { background: linear-gradient(135deg, var(--accent, #0284c7), #0e7490); border-color: transparent; color: #fff; }
+.cc-btn.danger { color: #fca5a5; border-color: #7f1d1d; background: rgba(220,38,38,.10); }
+.cc-btn.danger:hover { background: rgba(220,38,38,.24); border-color: #ef4444; }
+.cc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cc-chip {
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--card-brd, #334155);
+    background: rgba(255,255,255,.05);
+    color: var(--txt, #e2e8f0);
+    font-size: 11.5px; font-weight: 700; cursor: pointer; transition: .16s;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.cc-chip:hover { border-color: #22d3ee; color: #67e8f9; }
+.cc-chip.on { background: linear-gradient(135deg, var(--accent, #0284c7), #0e7490); border-color: transparent; color: #fff; }
+.cc-chip input[type=color] { width: 22px; height: 20px; padding: 0; border: none; background: none; cursor: pointer; }
+.cc-list { display: flex; flex-direction: column; gap: 6px; max-height: 230px; overflow: auto; padding-right: 2px; }
+.cc-list::-webkit-scrollbar { width: 5px; }
+.cc-list::-webkit-scrollbar-thumb { background: rgba(34,211,238,.35); border-radius: 8px; }
+.cc-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 9px;
+    border: 1px solid var(--card-brd, #334155);
+    border-radius: 9px;
+    background: rgba(255,255,255,.03);
+    color: var(--txt, #e2e8f0);
+    font-size: 12px; cursor: grab;
+    touch-action: none;
+}
+.cc-item .cc-grip { color: var(--txt-dim, #94a3b8); display: inline-flex; }
+.cc-item .cc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-item.cc-dragging { opacity: .45; border-color: #22d3ee; pointer-events: none; }
+.cc-item.cc-drop { border-color: #22d3ee; box-shadow: inset 0 0 0 1px #22d3ee; background: rgba(34,211,238,.12); }
+.cc-item.is-hidden-item .cc-name { text-decoration: line-through; opacity: .55; }
+.cc-item input[type=checkbox] { accent-color: #22d3ee; width: 15px; height: 15px; }
+.cc-hint { font-size: 11px; color: var(--txt-dim, #94a3b8); line-height: 1.75; margin-top: 8px; }
+.cc-hint i { color: #22d3ee; }
+.cc-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cc-preset {
+    text-align: start; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--card-brd, #334155);
+    background: linear-gradient(135deg, rgba(2,132,199,.16), rgba(6,182,212,.06));
+    color: var(--txt, #e2e8f0); cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 800; transition: .18s;
+}
+.cc-preset small { display: block; font-weight: 400; font-size: 10.5px; color: var(--txt-dim, #94a3b8); margin-top: 4px; line-height: 1.5; }
+.cc-preset:hover { border-color: #22d3ee; transform: translateY(-1px); }
+.cc-preset.on { border-color: #22d3ee; box-shadow: 0 0 0 1px #22d3ee, 0 8px 18px rgba(34,211,238,.22); }
+.cc-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.cc-stat {
+    font-size: 10.5px; padding: 3px 9px; border-radius: 999px;
+    background: rgba(34,211,238,.10); border: 1px solid rgba(34,211,238,.28);
+    color: #67e8f9; font-weight: 700;
+}
+.cc-stat.warn { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.4); color: #fcd34d; }
+.cc-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cc-file-input { display: none; }
+
+/* وضع فاتح */
+body.theme-light .cc-item { background: rgba(15,23,42,.03); }
+body.theme-light .cc-btn { background: rgba(15,23,42,.05); }
+body.theme-light .cc-chip { background: rgba(15,23,42,.05); }
+body.theme-light .cc-chip.on, body.theme-light .cc-btn.on { color: #fff; }
+body.theme-light .cc-sec h5 i, body.theme-light .cc-hint i { color: #0369a1; }
+
+/* ============ 6) توافق الشاشات الصغيرة ============ */
+@media (max-width: 520px) {
+    body.gis-cc.cc-side-right .sidebar { left: 10px; right: 10px; width: auto; }
+    .gis-side-resize { display: none; }
+    .cc-presets { grid-template-columns: 1fr; }
+}
+
+/* ============ 7) جاهزية RTL ============ */
+body.gis-cc[dir="rtl"] .gis-side-resize { right: auto; left: -5px; }
+body.gis-cc[dir="rtl"] .cc-slider-row > label { min-width: 96px; }

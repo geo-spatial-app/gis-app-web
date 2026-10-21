@@ -777,6 +777,7 @@
         diagnostics: diagnostics,
         classifyError: classifyError,
         errKind: errKind,
+        errMsg: errMsg,
         whenReady: whenReady,
         readConfig: readConfig,
         resetToDefaults: resetToDefaults,

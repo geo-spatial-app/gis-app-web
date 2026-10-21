@@ -162,15 +162,19 @@
         ok('t21-err-perm', C.classifyError(new Error('new row violates row-level security policy')).kind === 'permission', 'مخالفة RLS → permission');
         ok('t22-err-config', C.classifyError(new Error('Invalid API key')).kind === 'config', 'مفتاح خاطئ → config');
         ok('t23-err-explicit', C.classifyError({ kind: 'session', message: 'x' }).kind === 'session', 'احترام النوع المُمرَّر صراحةً');
-        ok('t24-no-reprompt', !/أعد إدخال|أدخل الرابط|لم تضبط/.test(
-            [new Error('Failed to fetch'), new Error('JWT expired'), new Error('Invalid login credentials')]
-                .map(C.errMsg).join(' | ')), 'لا رسالة تطلب إعادة إدخال الإعدادات في الشبكة/الجلسة/الدخول');
+        try {
+            ok('t24-no-reprompt', !/أعد إدخال|أدخل الرابط|لم تضبط/.test(
+                [new Error('Failed to fetch'), new Error('JWT expired'), new Error('Invalid login credentials')]
+                    .map(C.errMsg).join(' | ')), 'لا رسالة تطلب إعادة إدخال الإعدادات في الشبكة/الجلسة/الدخول');
+        } catch (e) { ok('t24-no-reprompt', false, 'استثناء: ' + e.message); }
 
         /* تسجيل الخروج لا يُسقط التطبيق */
-        Promise.resolve()
-            .then(function () { return C.signOut(); })
-            .then(function () { ok('t25-signout', true, 'signOut() تُحلّ بدون رفض'); })
-            .catch(function (e) { ok('t25-signout', false, 'signOut() رفض: ' + e.message); });
+        try {
+            Promise.resolve()
+                .then(function () { return C.signOut(); })
+                .then(function () { ok('t25-signout', true, 'signOut() تُحلّ بدون رفض'); })
+                .catch(function (e) { ok('t25-signout', false, 'signOut() رفض: ' + e.message); });
+        } catch (e) { ok('t25-signout', false, 'استثناء: ' + e.message); }
 
         if (NET) {
             Promise.all([C._getClient(), C._getClient()])
@@ -191,15 +195,17 @@
     else start();
 
     setTimeout(function () {
-        if (!done && NET && document.getElementById('summary').textContent.indexOf('SUMMARY') === -1) {
+        if (done) return;
+        if (NET && document.getElementById('summary').textContent.indexOf('SUMMARY') === -1) {
             var d2 = document.getElementById('summary');
-            var s = 'SUMMARY pass=' + pass + ' fail=' + fail + ' (timeout)';
+            var s = 'SUMMARY pass=' + pass + ' fail=' + fail + ' (network-timeout)';
             d2.textContent = s; d2.className = 'n';
             document.title = 'RESULT:TIMEOUT ' + s;
             document.body.setAttribute('data-result', 'TIMEOUT');
+            document.body.setAttribute('data-summary', s);
             done = true;
-        } else if (!done) { finish(); }
-    }, 12000);
+        } else if (!NET) { finish(); }
+    }, NET ? 45000 : 3000);
 })();
 </script>
 </body>

@@ -347,11 +347,15 @@ if (window.GIS && GIS.bootstrap) {
             SET({ sidebar: { width: 360 } });
         }
 
-        /* الطي + الإخفاء التلقائي */
-        UI.set('sidebar.collapsed', true);
-        ok('طيّ يضيف collapsed', side.classList.contains('collapsed'), side.className);
-        UI.set('sidebar.collapsed', false);
-        ok('فك الطيّ', !side.classList.contains('collapsed'));
+        /* الطي + الإخفاء التلقائي (Phase B: أوضاع ثلاثة) */
+        UI.set('sidebar.mode', 'compact');
+        ok('وضع compact يضيف collapsed', side.classList.contains('collapsed'), side.className);
+        UI.set('sidebar.mode', 'expanded');
+        ok('وضع expanded يفك الطيّ', !side.classList.contains('collapsed'));
+        UI.set('sidebar.mode', 'hidden');
+        ok('وضع hidden يخفي القائمة ويبقي زر الفتح', document.body.classList.contains('cc-side-hidden') && !!dock.querySelector('[data-side="expand"]') && !dock.querySelector('[data-side="expand"]').classList.contains('cc-dock-solo-hide'));
+        UI.set('sidebar.mode', 'compact');
+        ok('العودة إلى compact', side.classList.contains('collapsed') && document.body.classList.contains('cc-side-compact'));
         ok('الزر on في الشريط يتبع التبويب النشط (مُدار من التطبيق المضيف)', typeof window.switchTab === 'function' && !!$('#sideDock button[data-side="locations"]'));
 
         SET({ sidebar: { autoHide: true } });

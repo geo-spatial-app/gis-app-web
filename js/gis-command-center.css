@@ -231,3 +231,100 @@ body.theme-light .cc-sec h5 i, body.theme-light .cc-hint i { color: #0369a1; }
 /* ============ 7) جاهزية RTL ============ */
 body.gis-cc[dir="rtl"] .gis-side-resize { right: auto; left: -5px; }
 body.gis-cc[dir="rtl"] .cc-slider-row > label { min-width: 96px; }
+
+/* ================================================================
+   Phase B — Smart Sidebar (Expanded / Compact 64px / Hidden)
+   إضافة فوق التنسيقات الحالية فقط — لا تغيّر التصميم المعتمد.
+   ================================================================ */
+
+/* ---- 7.1) منتقي الأوضاع الثلاثة داخل Sidebar Manager ---- */
+.cc-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.cc-mode {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 9px 4px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    border: 1px solid var(--card-brd, #334155);
+    background: rgba(255,255,255,.04); color: var(--txt-dim, #94a3b8);
+    font-size: 11px; font-weight: 700; transition: .16s;
+}
+.cc-mode i { font-size: 15px; }
+.cc-mode:hover { border-color: #22d3ee; color: #67e8f9; }
+.cc-mode.on {
+    border-color: #22d3ee; color: #fff;
+    background: linear-gradient(160deg, var(--accent, #0284c7), #0e7490);
+    box-shadow: 0 0 0 1px rgba(34,211,238,.35), 0 6px 16px rgba(2,132,199,.35);
+}
+body.theme-light .cc-mode { background: rgba(15,23,42,.04); }
+
+/* ---- 7.2) الشريط المضغوط (Compact · 64px · أيقونات فقط) ---- */
+body.gis-cc.cc-side-compact #sideDock {
+    width: 64px; min-width: 64px; padding: 8px 0;
+    align-items: center; border-radius: 16px;
+}
+body.gis-cc.cc-side-compact #sideDock button {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+}
+/* إخفاء أي نص داخل أزرار الشريط — أيقونات فقط */
+body.gis-cc.cc-side-compact #sideDock button > span,
+body.gis-cc.cc-side-compact #sideDock button .btn-text { display: none; }
+body.gis-cc.cc-side-compact #sideDock button i { font-size: 18px; }
+
+/* فاصل رقيق أعلى زر الفتح لتمييزه */
+body.gis-cc.cc-side-compact #sideDock button[data-side="expand"] {
+    background: linear-gradient(160deg, var(--accent, #0284c7), #0e7490); color: #fff;
+    margin-bottom: 4px;
+}
+
+/* ---- 7.3) الوضع المخفي (Hidden): يبقى زر الإظهار فقط ---- */
+body.gis-cc.cc-side-hidden #sideDock {
+    width: 52px; min-width: 52px; padding: 7px 0; align-items: center; border-radius: 14px;
+}
+body.gis-cc.cc-side-hidden #sideDock button.cc-dock-solo-hide { display: none !important; }
+body.gis-cc.cc-side-hidden #sideDock button[data-side="expand"] {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(160deg, var(--accent, #0284c7), #0e7490); color: #fff;
+    box-shadow: 0 6px 18px rgba(2,132,199,.4);
+}
+body.gis-cc.cc-side-hidden .sidebar { pointer-events: none; }
+
+/* ---- 7.4) تلميحات الأدوات (Tooltip) على أزرار الشريط ---- */
+body.gis-cc #sideDock button[data-side] { position: relative; }
+body.gis-cc #sideDock button[data-side]::after {
+    content: attr(data-cc-tip);
+    position: absolute; inset-inline-start: calc(100% + 10px); top: 50%;
+    transform: translateY(-50%) scale(.94);
+    background: rgba(8,16,26,.96); color: #e6eef6;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 8px;
+    padding: 5px 10px; font-size: 11.5px; font-weight: 700; letter-spacing: .2px;
+    white-space: nowrap; opacity: 0; pointer-events: none;
+    box-shadow: 0 8px 22px rgba(0,0,0,.45); z-index: 20;
+    transition: opacity .14s ease, transform .14s ease;
+}
+body.gis-cc #sideDock button[data-side]:hover::after,
+body.gis-cc #sideDock button[data-side]:focus-visible::after {
+    opacity: 1; transform: translateY(-50%) scale(1);
+}
+/* في الوضع اليمين يكون الشريط يمين الشاشة → التلميح نحو اليسار */
+body.gis-cc.cc-side-right #sideDock button[data-side]::after {
+    inset-inline-start: auto; inset-inline-end: calc(100% + 10px);
+}
+/* عند اتجاه LTR: التلميح يظهر على الجهة المقابلة تلقائياً عبر logical properties */
+body.gis-cc.cc-side-ltr #sideDock button[data-side]::after { inset-inline-start: calc(100% + 10px); }
+
+/* ---- 7.5) توافق RTL/LTR لمواضع الشريط (استعداد لنظام اللغات) ---- */
+/* نستخدم inset-inline لضمان صحة الموضع في الاتجاهين */
+body.gis-cc #sideDock { inset-inline-start: 16px; inset-inline-end: auto; left: auto; right: auto; }
+body.gis-cc.cc-side-right #sideDock { inset-inline-start: auto; inset-inline-end: 16px; }
+body.gis-cc .sidebar { inset-inline-start: 16px; inset-inline-end: auto; left: auto; right: auto; }
+body.gis-cc.cc-side-right .sidebar { inset-inline-start: auto; inset-inline-end: 16px; }
+/* التلميح لا يخرج عن حدود الشاشة على الموبايل */
+@media (max-width: 520px) {
+    body.gis-cc #sideDock button[data-side]::after { display: none; }
+}
+
+/* ---- 7.6) على الموبايل: compact يبقى شريطاً عائماً، expanded يملأ عرضاً معقولاً ---- */
+@media (max-width: 520px) {
+    body.gis-cc.cc-side-compact #sideDock { width: 58px; min-width: 58px; }
+    body.gis-cc.cc-side-hidden #sideDock { width: 48px; min-width: 48px; }
+}
+

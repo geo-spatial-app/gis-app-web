@@ -22,7 +22,7 @@
         v: 1,
         icon: { mode: 'svg', opacity: 1, mono: false, color: '' },
         dock: { order: [], hidden: [], size: 40, gap: 6, opacity: 1 },
-        sidebar: { side: 'left', width: 360, autoHide: false, collapsed: null },
+        sidebar: { mode: 'compact', side: 'left', width: 360, autoHide: false, collapsed: null },
         tabs: { order: [], hidden: [] },
         theme: { accent: '', glow: 'normal' },
         preset: 'default'
@@ -128,6 +128,13 @@
         s.sidebar.width = clamp(s.sidebar.width, 280, 560, 360);
         s.sidebar.side = (s.sidebar.side === 'right') ? 'right' : 'left';
         s.sidebar.autoHide = !!s.sidebar.autoHide;
+        /* Phase B — وضع القائمة الجانبية: expanded / compact / hidden.
+           ترحيل من الإعدادات القديمة (collapsed boolean) عند غياب mode. */
+        if (['expanded', 'compact', 'hidden'].indexOf(s.sidebar.mode) < 0) {
+            if (s.sidebar.collapsed === true) { s.sidebar.mode = 'compact'; }
+            else if (s.sidebar.collapsed === false) { s.sidebar.mode = 'expanded'; }
+            else { s.sidebar.mode = 'compact'; }
+        }
         s.theme.glow = ['off', 'normal', 'strong'].indexOf(s.theme.glow) >= 0 ? s.theme.glow : 'normal';
         if (!Array.isArray(s.dock.order)) { s.dock.order = []; }
         if (!Array.isArray(s.dock.hidden)) { s.dock.hidden = []; }
@@ -188,6 +195,10 @@
         root.style.setProperty('--sidebar-w', S.sidebar.width + 'px');
         body.classList.toggle('cc-side-right', S.sidebar.side === 'right');
         body.classList.toggle('cc-autohide', !!S.sidebar.autoHide);
+        body.classList.toggle('cc-side-ltr', (root.getAttribute('dir') || body.getAttribute('dir')) === 'ltr');
+
+        /* — وضع القائمة الجانبية (Phase B): expanded / compact / hidden — */
+        applySideMode(S.sidebar.mode, false);
 
         /* — التوهج — */
         body.classList.remove('cc-glow-off', 'cc-glow-normal', 'cc-glow-strong');
@@ -209,19 +220,70 @@
         applyOrder(dk, pinFirst(S.dock.order), 'data-side');
         applyHidden(dk, S.dock.hidden, 'cc-hidden');
 
-        /* — حالة الطي المحفوظة — */
-        var sb = sidebarEl();
-        if (sb && S.sidebar.collapsed === true) {
-            sb.classList.add('collapsed');
-            var d = dockEl();
-            if (d) { d.classList.remove('hidden'); }
-        } else if (sb && S.sidebar.collapsed === false) {
-            sb.classList.remove('collapsed');
-            var d2 = dockEl();
-            if (d2) { d2.classList.add('hidden'); }
-        }
+        /* — حالة الطي/الوضع مُطبّقة أعلاه عبر applySideMode — */
 
         syncLists();
+    }
+
+    /* ================= Phase B — Smart Sidebar: الأوضاع الثلاثة ================= */
+    /* يطبّق الوضع على DOM، ويحفظ في S.sidebar.mode + يعيد حساب أبعاد الخريطة.
+       silent=true عند الاستدعاء من apply() لتفادي الحفظ المتكرّر. */
+    function applySideMode(mode, persist) {
+        if (['expanded', 'compact', 'hidden'].indexOf(mode) < 0) { mode = 'compact'; }
+        var body = document.body;
+        var sb = sidebarEl(), dk = dockEl();
+
+        body.classList.remove('cc-side-expanded', 'cc-side-compact', 'cc-side-hidden');
+        body.classList.add('cc-side-' + mode);
+        body.setAttribute('data-cc-side-mode', mode);
+
+        if (sb) {
+            sb.classList.toggle('collapsed', mode !== 'expanded');
+            sb.classList.toggle('cc-rail', mode === 'compact');
+            sb.setAttribute('data-cc-mode', mode);
+        }
+        if (dk) {
+            dk.classList.toggle('hidden', mode === 'expanded');
+            dk.setAttribute('data-cc-mode', mode);
+            /* تلميح الأداة (Tooltip) + في وضع hidden يبقى زر الفتح فقط */
+            var TIPS = {
+                expand: 'فتح القائمة', locations: 'المواقع', draw: 'أدوات الرسم',
+                files: 'البيانات والرفع', dashboard: 'لوحة المؤشرات', export: 'التنزيل والتصدير',
+                settings: 'الإعدادات', tools: 'الأدوات', modules: 'الوحدات', cloud: 'السحابة'
+            };
+            $$('#sideDock button[data-side]').forEach(function (b) {
+                var id = b.getAttribute('data-side');
+                b.setAttribute('data-cc-tip', TIPS[id] || b.getAttribute('title') || id);
+                var onlyExpand = mode === 'hidden' && id !== 'expand';
+                b.classList.toggle('cc-dock-solo-hide', onlyExpand);
+            });
+        }
+
+        if (S) {
+            S.sidebar.mode = mode;
+            if (mode === 'expanded') { S.sidebar.collapsed = false; }
+            else { S.sidebar.collapsed = true; }
+        }
+        if (persist !== false) {
+            save();
+            if (typeof window.__gisRefitMap === 'function') {
+                try { window.__gisRefitMap(); } catch (e) {}
+            }
+            syncPanelUI();
+            try { document.dispatchEvent(new CustomEvent('gis:sidemode', { detail: { mode: mode } })); }
+            catch (e) {}
+        }
+    }
+    function setSideMode(mode) {
+        applySideMode(mode, true);
+        var labels = { expanded: 'مفتوحة', compact: 'مضغوطة (أيقونات)', hidden: 'مخفية' };
+        notify('وضع القائمة: ' + (labels[mode] || mode), 'success');
+    }
+    function sideMode() { return (S && S.sidebar.mode) || 'compact'; }
+    function cycleSideMode() {
+        var order = ['compact', 'expanded', 'hidden'];
+        var i = order.indexOf(sideMode());
+        setSideMode(order[(i + 1) % order.length]);
     }
 
     function pinFirst(order) {
@@ -446,11 +508,9 @@
         return h;
     }
 
+    /* توافق خلفي: setSide(true)=expanded، setSide(false)=compact */
     function setSide(open) {
-        var sb = sidebarEl(), dk = dockEl();
-        if (!sb || !dk) { return; }
-        sb.classList.toggle('collapsed', !open);
-        dk.classList.toggle('hidden', open);
+        applySideMode(open ? 'expanded' : 'compact', true);
     }
 
     function wireAutoHide() {
@@ -481,6 +541,18 @@
                 t = setTimeout(function () {
                     var c = sb.classList.contains('collapsed');
                     if (S.sidebar.collapsed !== c) { S.sidebar.collapsed = c; save(); }
+                    /* مزامنة الوضع مع تغيّر الصنف القادم من التطبيق (setSidePanel) */
+                    var want = c ? 'compact' : 'expanded';
+                    if (S.sidebar.mode === 'hidden') { return; }
+                    if (S.sidebar.mode !== want) {
+                        S.sidebar.mode = want;
+                        document.body.classList.remove('cc-side-expanded', 'cc-side-compact', 'cc-side-hidden');
+                        document.body.classList.add('cc-side-' + want);
+                        document.body.setAttribute('data-cc-side-mode', want);
+                        if (typeof window.__gisRefitMap === 'function') { try { window.__gisRefitMap(); } catch (e) {} }
+                        save();
+                        syncPanelUI();
+                    }
                 }, 120);
             }).observe(sb, { attributes: true, attributeFilter: ['class'] });
         }
@@ -528,6 +600,12 @@
 
         '<div class="cc-sec" id="ccSide">' +
             '<h5><i class="fas fa-arrows-left-right-to-line"></i> Sidebar Manager · القائمة الجانبية</h5>' +
+            '<div class="cc-row"><label>وضع القائمة</label></div>' +
+            '<div class="cc-modes" id="ccSideModes" role="group" aria-label="وضع القائمة الجانبية">' +
+                '<button type="button" class="cc-mode" data-mode="expanded" title="فتح اللوحة كاملة"><i class="fas fa-up-right-and-down-left-from-center"></i><span>مفتوحة</span></button>' +
+                '<button type="button" class="cc-mode" data-mode="compact" title="عرض الأيقونات فقط بعرض 64px"><i class="fas fa-bars-staggered"></i><span>مضغوطة</span></button>' +
+                '<button type="button" class="cc-mode" data-mode="hidden" title="إخفاء القائمة مع إبقاء زر الإظهار"><i class="fas fa-eye-slash"></i><span>مخفية</span></button>' +
+            '</div>' +
             '<div class="cc-row"><label>تموضع اللوحة</label>' +
                 '<div class="cc-chips">' +
                     '<button type="button" class="cc-chip" id="ccSideLeft" title="عرض اللوحة على يسار الشاشة"><i class="fas fa-arrow-right-arrow-left"></i> يسار</button>' +
@@ -760,6 +838,9 @@
         if (badge) { badge.textContent = mode === 'svg' ? 'SVG' : 'FA'; }
         v = $('#ccSideLeft'); if (v) { v.classList.toggle('on', S.sidebar.side === 'left'); }
         v = $('#ccSideRight'); if (v) { v.classList.toggle('on', S.sidebar.side === 'right'); }
+        $$('#ccSideModes .cc-mode').forEach(function (b) {
+            b.classList.toggle('on', b.getAttribute('data-mode') === sideMode());
+        });
         v = $('#ccAccent'); if (v && S.theme.accent) { v.value = S.theme.accent; }
         $$('[data-glow]').forEach(function (b) {
             b.classList.toggle('on', b.getAttribute('data-glow') === S.theme.glow);
@@ -915,10 +996,14 @@
 
         bindClick('#ccSideLeft', function () { set('sidebar.side', 'left'); syncPanelUI(); });
         bindClick('#ccSideRight', function () { set('sidebar.side', 'right'); syncPanelUI(); });
+        /* Phase B — أزرار الأوضاع الثلاثة */
+        $$('#ccSideModes .cc-mode', panel).forEach(function (b) {
+            b.addEventListener('click', function () { setSideMode(b.getAttribute('data-mode')); });
+        });
         var ah = $('#ccAutoHide', panel);
         if (ah) { ah.addEventListener('change', function () { set('sidebar.autoHide', !!this.checked); }); }
-        bindClick('#ccCollapse', function () { setSide(false); });
-        bindClick('#ccExpand', function () { setSide(true); });
+        bindClick('#ccCollapse', function () { setSideMode('compact'); });
+        bindClick('#ccExpand', function () { setSideMode('expanded'); });
 
         var th = $('#setTheme');
         bindClick('#ccDark', function () {
@@ -1007,6 +1092,9 @@
         exportJson: exportJson,
         importJson: importJson,
         setSide: setSide,
+        setSideMode: setSideMode,
+        sideMode: sideMode,
+        cycleSideMode: cycleSideMode,
         setIconSize: setIconSize,
         iconSize: iconSize,
         isolate: isolate,

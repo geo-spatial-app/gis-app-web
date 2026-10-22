@@ -561,10 +561,10 @@
             --txt-dim:#475569;
         }
 
-        /* ===== اللوحة العائمة أعلى اليسار ===== */
+        /* ===== لوحة التحكم الرئيسية على اليمين ===== */
         .sidebar {
             position:fixed !important;
-            top:calc(var(--app-top) + 12px); left:calc(16px + 64px); right:auto;
+            top:calc(var(--app-top) + 12px); left:auto; right:16px;
             width:360px; min-width:0; max-width:calc(100vw - 100px);
             height:auto; max-height:calc(var(--vh) - 110px);
             background:var(--panel-bg);
@@ -576,26 +576,22 @@
             color:var(--txt);
             z-index:1500;
             display:flex; flex-direction:column; overflow:hidden;
-            transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .26s, left .32s cubic-bezier(.4,0,.2,1);
+            transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .26s, right .32s cubic-bezier(.4,0,.2,1);
         }
-        .sidebar.collapsed { transform:translateX(calc(-100% - 90px)); opacity:0; pointer-events:none; }
-        body.gis-cc.cc-side-right .sidebar { left:auto; right:calc(16px + 64px); }
-        body.gis-cc.cc-side-right .sidebar.collapsed { transform:translateX(calc(100% + 90px)); }
+        .sidebar.collapsed { transform:translateX(calc(100% + 90px)); opacity:0; pointer-events:none; }
 
-        /* ===== شريط الأيقونات العائم (الحالة المطويّة) ===== */
+        /* ===== شريط الأيقونات العمودي على أقصى اليسار ===== */
         #sideDock {
-            position:fixed; top:calc(var(--app-top) + 12px); left:16px; z-index:1502;
+            position:fixed; top:calc(var(--app-top) + 12px); left:16px; right:auto; z-index:1502;
             display:flex; flex-direction:column; gap:6px; padding:8px;
             background:var(--panel-bg); backdrop-filter:blur(12px) saturate(150%);
             -webkit-backdrop-filter:blur(12px) saturate(150%);
             border:1px solid var(--card-brd); border-radius:14px; box-shadow:0 12px 34px rgba(0,0,0,.45);
             transition:opacity .22s, transform .22s;
         }
-        body.gis-cc.cc-side-right #sideDock { left:auto; right:16px; }
         #sideDock.hidden { opacity:0; pointer-events:none; transform:translateX(-14px); }
-        body.gis-cc.cc-side-right #sideDock.hidden { transform:translateX(14px); }
         #sideDock button { width:40px; height:40px; border-radius:11px; border:1px solid transparent;
-            background:rgba(255,255,255,.05); color:var(--txt-dim); font-size:16px; cursor:pointer; transition:.18s; }
+            background:rgba(255,255,255,.05); color:var(--txt-dim); font-size:16px; cursor:pointer; transition:.18s; overflow:visible; }
         #sideDock button:hover { background:rgba(2,132,199,.28); color:#fff; }
         #sideDock button.on { background:var(--accent); color:#fff; }
 
@@ -731,13 +727,13 @@
         /* ===== توافق الشاشات الصغيرة ===== */
         @media (max-width:520px) {
             .sidebar { top:calc(var(--app-top) + 6px); left:6px; right:6px; width:auto; max-width:none; max-height:calc(var(--vh) - 92px); border-radius:14px; }
-            .sidebar.collapsed { transform:translateX(calc(-100% - 16px)); }
+            .sidebar.collapsed { transform:translateX(calc(100% + 16px)); }
             #sideDock { top:calc(var(--app-top) + 6px); left:6px; border-radius:12px; padding:6px; }
             #sideDock.hidden { transform:translateX(-10px); }
             body.gis-cc.cc-side-right .sidebar { left:6px; right:6px; }
             body.gis-cc.cc-side-right .sidebar.collapsed { transform:translateX(calc(100% + 16px)); }
-            body.gis-cc.cc-side-right #sideDock { left:auto; right:6px; }
-            body.gis-cc.cc-side-right #sideDock.hidden { transform:translateX(10px); }
+            body.gis-cc.cc-side-right #sideDock { left:6px; right:auto; }
+            body.gis-cc.cc-side-right #sideDock.hidden { transform:translateX(-10px); }
             #sideDock { top:calc(var(--app-top) + 12px); left:10px; }
             .sidebar.collapsed { transform:translateY(-10px); opacity:0; }
         }

@@ -564,9 +564,9 @@
         /* ===== اللوحة العائمة أعلى اليسار ===== */
         .sidebar {
             position:fixed !important;
-            top:70px; left:16px; right:auto;
-            width:360px; min-width:0; max-width:calc(100vw - 32px);
-            height:auto; max-height:calc(var(--vh) - 92px);
+            top:calc(var(--app-top) + 12px); left:calc(16px + 64px); right:auto;
+            width:360px; min-width:0; max-width:calc(100vw - 100px);
+            height:auto; max-height:calc(var(--vh) - 110px);
             background:var(--panel-bg);
             backdrop-filter:blur(12px) saturate(150%);
             -webkit-backdrop-filter:blur(12px) saturate(150%);
@@ -576,20 +576,24 @@
             color:var(--txt);
             z-index:1500;
             display:flex; flex-direction:column; overflow:hidden;
-            transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .26s;
+            transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .26s, left .32s cubic-bezier(.4,0,.2,1);
         }
-        .sidebar.collapsed { transform:translateX(calc(-100% - 26px)); opacity:0; pointer-events:none; }
+        .sidebar.collapsed { transform:translateX(calc(-100% - 90px)); opacity:0; pointer-events:none; }
+        body.gis-cc.cc-side-right .sidebar { left:auto; right:calc(16px + 64px); }
+        body.gis-cc.cc-side-right .sidebar.collapsed { transform:translateX(calc(100% + 90px)); }
 
         /* ===== شريط الأيقونات العائم (الحالة المطويّة) ===== */
         #sideDock {
-            position:fixed; top:calc(var(--app-top) + 12px); left:16px; z-index:1501;
+            position:fixed; top:calc(var(--app-top) + 12px); left:16px; z-index:1502;
             display:flex; flex-direction:column; gap:6px; padding:8px;
             background:var(--panel-bg); backdrop-filter:blur(12px) saturate(150%);
             -webkit-backdrop-filter:blur(12px) saturate(150%);
             border:1px solid var(--card-brd); border-radius:14px; box-shadow:0 12px 34px rgba(0,0,0,.45);
             transition:opacity .22s, transform .22s;
         }
+        body.gis-cc.cc-side-right #sideDock { left:auto; right:16px; }
         #sideDock.hidden { opacity:0; pointer-events:none; transform:translateX(-14px); }
+        body.gis-cc.cc-side-right #sideDock.hidden { transform:translateX(14px); }
         #sideDock button { width:40px; height:40px; border-radius:11px; border:1px solid transparent;
             background:rgba(255,255,255,.05); color:var(--txt-dim); font-size:16px; cursor:pointer; transition:.18s; }
         #sideDock button:hover { background:rgba(2,132,199,.28); color:#fff; }
@@ -619,7 +623,7 @@
         .sidebar .tabs button.tbp-export.active { color:#fff; background:linear-gradient(180deg,rgba(16,185,129,.30),rgba(2,132,199,.20)); border-bottom-color:#10b981; box-shadow:inset 0 0 0 1px rgba(16,185,129,.35),0 6px 16px rgba(16,185,129,.18); }
 
         /* ===== المحتوى ===== */
-        .sidebar .content { flex:1; overflow-y:auto; padding:12px; background:transparent; color:var(--txt); }
+        .sidebar .content { flex:1; overflow-y:auto; overflow-x:hidden; padding:12px; background:transparent; color:var(--txt); min-width:0; }
         .sidebar .content::-webkit-scrollbar { width:6px; }
         .sidebar .content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.18); border-radius:10px; }
         .sidebar .tab-header { border-bottom:1px solid var(--card-brd); }
@@ -629,10 +633,11 @@
         .sidebar .tab-header .add-btn:hover { background:#0369a1; }
 
         /* ===== عناصر النماذج داخل اللوحة ===== */
+        .sidebar * { min-width:0; max-width:100%; box-sizing:border-box; }
         .sidebar input[type=text], .sidebar input[type=number], .sidebar input[type=search],
         .sidebar textarea, .sidebar select, .sidebar .search-box {
             background:var(--card-bg); border:1px solid var(--card-brd); color:var(--txt);
-            border-radius:8px; font-family:inherit; }
+            border-radius:8px; font-family:inherit; width:100%; }
         .sidebar input:focus, .sidebar textarea:focus, .sidebar select:focus { border-color:var(--accent); outline:none; }
         .sidebar input::placeholder, .sidebar textarea::placeholder { color:#64748b; }
         .sidebar select option { background:#0f172a; color:#e2e8f0; }
@@ -725,7 +730,14 @@
 
         /* ===== توافق الشاشات الصغيرة ===== */
         @media (max-width:520px) {
-            .sidebar { top:calc(var(--app-top) + 6px); left:10px; right:10px; width:auto; max-width:none; max-height:calc(var(--vh) - 88px); }
+            .sidebar { top:calc(var(--app-top) + 6px); left:6px; right:6px; width:auto; max-width:none; max-height:calc(var(--vh) - 92px); border-radius:14px; }
+            .sidebar.collapsed { transform:translateX(calc(-100% - 16px)); }
+            #sideDock { top:calc(var(--app-top) + 6px); left:6px; border-radius:12px; padding:6px; }
+            #sideDock.hidden { transform:translateX(-10px); }
+            body.gis-cc.cc-side-right .sidebar { left:6px; right:6px; }
+            body.gis-cc.cc-side-right .sidebar.collapsed { transform:translateX(calc(100% + 16px)); }
+            body.gis-cc.cc-side-right #sideDock { left:auto; right:6px; }
+            body.gis-cc.cc-side-right #sideDock.hidden { transform:translateX(10px); }
             #sideDock { top:calc(var(--app-top) + 12px); left:10px; }
             .sidebar.collapsed { transform:translateY(-10px); opacity:0; }
         }
@@ -916,31 +928,31 @@
 </header>
 
 <div class="app">
-    <div id="sideDock" class="hidden" aria-label="Quick tools dock">
-        <button type="button" data-side="expand" title="Open Panel"><i class="fas fa-chevron-right"></i></button>
-        <button type="button" data-side="locations" title="Locations"><i class="fas fa-map-pin"></i></button>
-        <button type="button" data-side="draw" title="Drawing Tools"><i class="fas fa-pen"></i></button>
-        <button type="button" data-side="files" title="Data &amp; Upload"><i class="fas fa-folder-open"></i></button>
-        <button type="button" data-side="dashboard" title="Dashboard"><i class="fas fa-chart-line"></i></button>
-        <button type="button" data-side="export" title="Download &amp; Export"><i class="fas fa-file-export"></i></button>
-        <button type="button" data-side="settings" title="Settings"><i class="fas fa-cog"></i></button>
+    <div id="sideDock" class="hidden" aria-label="شريط الأدوات السريع">
+        <button type="button" data-side="expand" title="فتح اللوحة"><i class="fas fa-chevron-right"></i></button>
+        <button type="button" data-side="locations" title="المواقع"><i class="fas fa-map-pin"></i></button>
+        <button type="button" data-side="draw" title="أدوات الرسم"><i class="fas fa-pen"></i></button>
+        <button type="button" data-side="files" title="البيانات والرفع"><i class="fas fa-folder-open"></i></button>
+        <button type="button" data-side="dashboard" title="لوحة الإحصائيات"><i class="fas fa-chart-line"></i></button>
+        <button type="button" data-side="export" title="التصدير والتنزيل"><i class="fas fa-file-export"></i></button>
+        <button type="button" data-side="settings" title="الإعدادات"><i class="fas fa-cog"></i></button>
     </div>
     <div class="sidebar" id="sidebar">
         <div class="side-head">
-            <div class="sh-title"><i class="fas fa-satellite-dish"></i> Control Panel</div>
+            <div class="sh-title"><i class="fas fa-satellite-dish"></i> لوحة التحكم</div>
             <div class="sh-actions">
-                <button type="button" class="sh-btn" id="sideCollapse" title="Collapse to icon rail"><i class="fas fa-chevron-left"></i></button>
+                <button type="button" class="sh-btn" id="sideCollapse" title="تصغير إلى شريط الأيقونات"><i class="fas fa-chevron-left"></i></button>
             </div>
         </div>
         <div class="tabs">
-            <button class="active" data-tab="locations"><i class="fas fa-map-pin"></i> Locations</button>
-            <button data-tab="draw"><i class="fas fa-pen"></i> Draw</button>
-            <button data-tab="export" class="tbp-export" title="Download &amp; Export"><i class="fas fa-file-export"></i> Export</button>
-            <button data-tab="tools"><i class="fas fa-toolbox"></i> Tools</button>
-            <button data-tab="files"><i class="fas fa-folder-open"></i> Data</button>
-            <button data-tab="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
-            <button data-tab="cloud"><i class="fas fa-cloud"></i> Cloud</button>
-            <button data-tab="settings"><i class="fas fa-cog"></i> Settings</button>
+            <button class="active" data-tab="locations"><i class="fas fa-map-pin"></i> المواقع</button>
+            <button data-tab="draw"><i class="fas fa-pen"></i> الرسم</button>
+            <button data-tab="export" class="tbp-export" title="التصدير والتنزيل"><i class="fas fa-file-export"></i> التصدير</button>
+            <button data-tab="tools"><i class="fas fa-toolbox"></i> الأدوات</button>
+            <button data-tab="files"><i class="fas fa-folder-open"></i> البيانات</button>
+            <button data-tab="dashboard"><i class="fas fa-chart-line"></i> الإحصائيات</button>
+            <button data-tab="cloud"><i class="fas fa-cloud"></i> السحابة</button>
+            <button data-tab="settings"><i class="fas fa-cog"></i> الإعدادات</button>
         </div>
 
         <div class="content">

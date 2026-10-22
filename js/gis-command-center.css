@@ -223,9 +223,12 @@ body.theme-light .cc-sec h5 i, body.theme-light .cc-hint i { color: #0369a1; }
 
 /* ============ 6) توافق الشاشات الصغيرة ============ */
 @media (max-width: 520px) {
-    body.gis-cc.cc-side-right .sidebar { left: 10px; right: 10px; width: auto; }
+    body.gis-cc.cc-side-right .sidebar { left: 6px; right: 6px; width: auto; max-width:none; }
+    body.gis-cc.cc-side-right #sideDock { left:auto; right:6px; }
     .gis-side-resize { display: none; }
     .cc-presets { grid-template-columns: 1fr; }
+    body.gis-cc .sidebar { left:6px; right:6px; width:auto; max-width:none; }
+    body.gis-cc #sideDock { left:6px; right:auto; }
 }
 
 /* ============ 7) جاهزية RTL ============ */
@@ -315,11 +318,18 @@ body.gis-cc.cc-side-ltr #sideDock button[data-side]::after { inset-inline-start:
 /* نستخدم inset-inline لضمان صحة الموضع في الاتجاهين */
 body.gis-cc #sideDock { inset-inline-start: 16px; inset-inline-end: auto; left: auto; right: auto; }
 body.gis-cc.cc-side-right #sideDock { inset-inline-start: auto; inset-inline-end: 16px; }
-body.gis-cc .sidebar { inset-inline-start: 16px; inset-inline-end: auto; left: auto; right: auto; }
-body.gis-cc.cc-side-right .sidebar { inset-inline-start: auto; inset-inline-end: 16px; }
+body.gis-cc .sidebar { inset-inline-start: calc(16px + 64px); inset-inline-end: auto; left: auto; right: auto; }
+body.gis-cc.cc-side-right .sidebar { inset-inline-start: auto; inset-inline-end: calc(16px + 64px); }
+/* منع قص المحتوى داخل التبويبات */
+body.gis-cc .sidebar .tabs { flex-wrap: nowrap; }
+body.gis-cc .sidebar .tab-pane { overflow-x: hidden; }
 /* التلميح لا يخرج عن حدود الشاشة على الموبايل */
 @media (max-width: 520px) {
     body.gis-cc #sideDock button[data-side]::after { display: none; }
+    body.gis-cc .sidebar { inset-inline-start: 6px; inset-inline-end: 6px; left: 6px !important; right: 6px !important; max-width:none; width:auto; }
+    body.gis-cc.cc-side-right .sidebar { inset-inline-start: 6px; inset-inline-end: 6px; }
+    body.gis-cc #sideDock { inset-inline-start: 6px; inset-inline-end: auto; left: 6px; right: auto; }
+    body.gis-cc.cc-side-right #sideDock { inset-inline-start: auto; inset-inline-end: 6px; }
 }
 
 /* ---- 7.6) على الموبايل: compact يبقى شريطاً عائماً، expanded يملأ عرضاً معقولاً ---- */

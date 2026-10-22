@@ -29,8 +29,73 @@
     var projects = [];
     var projectsLoaded = false;
     var root = null;
+    /* يُضبط true عند اكتشاف أن جدول app_events غير منشأ (404) لإيقاف المحاولات */
+    var eventsMissing = false;
+
+    /* يغلّف أي وعد بمهلة قصوى حتى لا تبقى الطلبات معلّقة إلى ما لا نهاية */
+    function withTimeout(promise, ms) {
+        return new Promise(function (resolve, reject) {
+            var done = false;
+            var timer = setTimeout(function () {
+                if (!done) { done = true; reject(new Error('timeout')); }
+            }, ms || 8000);
+            promise.then(
+                function (v) { if (!done) { done = true; clearTimeout(timer); resolve(v); } },
+                function (e) { if (!done) { done = true; clearTimeout(timer); reject(e); } }
+            );
+        });
+    }
+
+    /* هل الخطأ يعني أن الجدول غير موجود (PGRST205 / 404)؟ */
+    function isMissingTable(err) {
+        if (!err) { return false; }
+        var code = String(err.code || '');
+        var msg = String(err.message || err.hint || err.details || '');
+        return code === 'PGRST205' || code === '42P01' || /does not exist|not find the table|Could not find the table|relation .* does not exist/i.test(msg);
+    }
     /* ما يكتبه المستخدم في نموذج الإعدادات (يُحفظ عند إعادة رسم الشاشة) */
     var draft = { url: null, key: null };
+
+    /* هل شاشة الدخول ما زالت معروضة؟ هذه هي الحالة الحقيقية التي يجب
+       الاعتماد عليها: المستخدم قد يكون مسجّل الدخول فعلًا (جلسة صالحة)
+       ومع ذلك تبقى شاشة الدخول ظاهرة — عندها يجب استدعاء enterApp. */
+    function loginScreenVisible() {
+        try {
+            var el = document.getElementById('loginScreen');
+            if (!el) { return false; }
+            if (el.style && el.style.display === 'none') { return false; }
+            var s = window.getComputedStyle(el);
+            return !s || s.display !== 'none';
+        } catch (e) { return true; }
+    }
+
+    /* خطأ الرجوع من Google/Supabase يظهر في عنوان الصفحة عند الفشل
+       (مثلًا error=invalid_request&error_description=...). نعرضه للمستخدم. */
+    function showOauthError(url) {
+        try {
+            var q = String(url || '').split('?')[1] || '';
+            q = q.split('#')[0];
+            var params = {};
+            q.split('&').forEach(function (pair) {
+                if (!pair) return;
+                var eq = pair.indexOf('=');
+                var rk = eq === -1 ? pair : pair.slice(0, eq);
+                var rv = eq === -1 ? '' : pair.slice(eq + 1);
+                var k, v;
+                try { k = decodeURIComponent(rk.replace(/\+/g, ' ')); } catch (e) { k = rk; }
+                try { v = decodeURIComponent(rv.replace(/\+/g, ' ')); } catch (e) { v = rv; }
+                if (k) { params[k] = v; }
+            });
+            if (!params['error']) { return; }
+            var el = document.getElementById('loginError');
+            if (!el) { return; }
+            var desc = params['error_description'] || params['error_code'] || params['error'];
+            var msg = 'تعذّر إتمام تسجيل الدخول: ' + desc;
+            el.textContent = msg;
+            el.style.display = 'block';
+            try { console.warn('[cloud] oauth error:', params['error'], desc); } catch (e) {}
+        } catch (e) {}
+    }
 
     // ---------- حالة المزامنة التلقائية ----------
     var LS_AUTOSYNC = 'gisAutoSync';
@@ -249,18 +314,30 @@
                     if (evt === 'TOKEN_REFRESHED') return;
 
                     if (evt !== 'PASSWORD_RECOVERY') projectsLoaded = false;
-                    render();
 
-                    if (user && typeof window.enterApp === 'function') {
-                        var entered = false;
-                        try { entered = localStorage.getItem('gisEntered') === '1'; } catch (e) {}
-                        if (!entered) { try { window.enterApp('cloud'); } catch (e) {} }
-                    }
-                    try {
-                        if (evt === 'SIGNED_IN' && user) { logEvent('login'); }
-                        else if (evt === 'INITIAL_SESSION' && user && !sessionOpenLogged) { sessionOpenLogged = true; logEvent('open'); }
-                        else if (evt === 'SIGNED_OUT' && hadUser && !user) { sessionOpenLogged = false; }
-                    } catch (e) {}
+                    /* مهم: يجب ألا نُنفّذ نداءات Supabase (جلب المشاريع / تسجيل
+                       الأحداث) داخل هذا الـcallback مباشرة، لأن supabase-js يطلقه
+                       وهو محتجز قفل المصادقة (auth lock) — أي نداء متزامن هنا
+                       يُسبب تعليقًا دائمیًا (deadlock) يمنع لاحقًا بدء Google OAuth.
+                       لذا نؤجّل كل العمل غير الحرج خارج نطاق الـcallback. */
+                    setTimeout(function () {
+                        try { render(); } catch (e) {}
+                        if (user && typeof window.enterApp === 'function') {
+                            /* الدخول يعتمد على حالة الواجهة الحقيقية، لا على راية
+                               قديمة في localStorage. الراية (gisEntered) تبقى '1'
+                               بعد أي دخول سابق، فكانت تمنع enterApp وتُبقي
+                               المستخدم عالقًا على شاشة الدخول رغم صحة الجلسة. */
+                            if (loginScreenVisible()) { try { window.enterApp('cloud'); } catch (e) {} }
+                        }
+                        try {
+                            if (evt === 'SIGNED_IN' && user) { logEvent('login'); }
+                            else if (evt === 'INITIAL_SESSION' && user && !sessionOpenLogged) { sessionOpenLogged = true; logEvent('open'); }
+                            else if (evt === 'SIGNED_OUT' && hadUser && !user) {
+                                sessionOpenLogged = false;
+                                try { localStorage.removeItem('gisEntered'); } catch (e) {}
+                            }
+                        } catch (e) {}
+                    }, 0);
                 });
             } catch (e) {}
             return client;
@@ -321,6 +398,9 @@
     }
     function logEvent(evt, extra) {
         if (!configured()) { return Promise.resolve(false); }
+        /* إن كان جدول app_events غير منشأ (404) نوقف المحاولات نهائيًا
+           حتى لا تتكرر طلبات معلّقة/فاشلة في كل تحميل. */
+        if (eventsMissing) { return Promise.resolve(false); }
         var row = {
             event: String(evt || 'event'),
             email: (extra && extra.email) || (user && user.email) || null,
@@ -328,10 +408,15 @@
             device: deviceInfo(),
             app_version: (extra && extra.version) || APP_VERSION
         };
-        return getClient()
+        return withTimeout(getClient()
             .then(function (c) { return c.from('app_events').insert(row); })
-            .then(function (r) { if (r && r.error) { throw r.error; } return true; })
-            .catch(function () { return false; });
+            .then(function (r) {
+                if (r && r.error) {
+                    if (isMissingTable(r.error)) { eventsMissing = true; }
+                    throw r.error;
+                }
+                return true;
+            }), 8000).catch(function () { return false; });
     }
     function listEvents(limit) {
         return getClient()
@@ -444,14 +529,14 @@
 
     function ensureProjects() {
         if (!user) return Promise.resolve();
-        return getClient()
+        return withTimeout(getClient()
             .then(function (c) { return c.from('projects').select('id,name,updated_at,feature_count').order('updated_at', { ascending: false }); })
             .then(function (r) {
                 if (r.error) throw r.error;
                 projects = r.data || [];
                 projectsLoaded = true;
                 fillList();
-            })
+            }), 12000)
             .catch(function (e) { toast('فشل جلب المشاريع: ' + errMsg(e), 'error'); });
     }
 
@@ -793,6 +878,9 @@
             if (!ok) return;
             var url = String(location.href || '');
             var hasCallback = /[#?&](code|access_token|error|error_description)=/.test(url);
+            /* التقاط خطأ الرجوع من OAuth قبل أن يمسحه الـSDK من العنوان،
+               وعرضه على شاشة الدخول بدل ترك المستخدم أمام شاشة صامتة. */
+            try { showOauthError(url); } catch (e) {}
             var hasPersisted = false;
             try {
                 for (var i = 0; i < localStorage.length; i++) {
@@ -801,8 +889,8 @@
                 }
             } catch (e) {}
             if (!hasCallback && !hasPersisted) return;
-            return getClient()
-                .then(function (c) { return c.auth.getSession(); })
+            return withTimeout(getClient()
+                .then(function (c) { return c.auth.getSession(); }), 12000)
                 .then(function (r) {
                     if (r && r.error) {
                         var c = classifyError(r.error);

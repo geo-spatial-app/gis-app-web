@@ -1,0 +1,166 @@
+/* ==========================================================================
+   منصة جغرافية — طبقة الثيم (فاتح / داكن)
+   تعتمد على متغيّرات --ui-* المعرّفة داخل index.html
+   ========================================================================== */
+
+/* ---------- انتقال ناعم عند التبديل ---------- */
+body,
+.sidebar,
+.sidebar .tabs,
+.sidebar .content,
+.modal,
+.controls,
+#measurePanel,
+#coordPanel,
+.tab-pane,
+.control-panel,
+.attr-toolbar,
+.geo-search,
+.geo-suggest {
+    transition: background-color .22s ease, color .22s ease, border-color .22s ease;
+}
+
+/* ---------- الخلفية الأساسية في الوضعين ---------- */
+html[data-theme="light"] body { background: var(--ui-bg); }
+html[data-theme="dark"]  body { background: var(--ui-bg); }
+
+/* ---------- الوضع الداكن: الهيدر ---------- */
+html[data-theme="dark"] .header {
+    background:
+        radial-gradient(120% 220% at 10% -30%, rgba(20, 184, 174, .30) 0%, transparent 48%),
+        linear-gradient(115deg, #041a2c 0%, #06223a 42%, #0d4f6b 74%, #0d7f8c 100%);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .55);
+}
+
+/* ---------- الحقول والنماذج ---------- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+    background: var(--ui-surface-2);
+    color: var(--ui-text);
+    border-color: var(--ui-border-2);
+}
+html[data-theme="dark"] option { background: var(--ui-surface); color: var(--ui-text); }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color: var(--ui-text-3); }
+html[data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(.8); }
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"] { accent-color: var(--ui-ok); }
+
+/* ---------- السكرول بار ---------- */
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--ui-border-2); }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #3d5f7a; }
+
+/* ---------- أدوات الخريطة (MapLibre) ---------- */
+html[data-theme="dark"] .maplibregl-ctrl-group {
+    background: var(--ui-surface);
+    box-shadow: 0 0 0 1px var(--ui-border), 0 3px 12px rgba(0, 0, 0, .45);
+}
+html[data-theme="dark"] .maplibregl-ctrl-group button + button { border-top: 1px solid var(--ui-border); }
+html[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(.85); }
+html[data-theme="dark"] .maplibregl-ctrl button:not(:disabled):hover { background-color: var(--ui-surface-3); }
+html[data-theme="dark"] .maplibregl-ctrl-attrib { background: rgba(8, 16, 24, .72); }
+html[data-theme="dark"] .maplibregl-ctrl-attrib a { color: var(--ui-link); }
+html[data-theme="dark"] .maplibregl-ctrl-scale {
+    background: rgba(8, 16, 24, .6);
+    color: var(--ui-text-2);
+    border-color: var(--ui-text-3);
+}
+html[data-theme="dark"] .maplibregl-popup-content {
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .6);
+}
+html[data-theme="dark"] .maplibregl-popup-tip {
+    border-top-color: var(--ui-surface) !important;
+    border-bottom-color: var(--ui-surface) !important;
+    border-left-color: var(--ui-surface) !important;
+    border-right-color: var(--ui-surface) !important;
+}
+html[data-theme="dark"] .maplibregl-popup-close-button { color: var(--ui-text-2); }
+
+/* ---------- أدوات الخريطة (Leaflet) ---------- */
+/* ملاحظة: صور البلاطات (tiles) تبقى كما هي، الداكنة تخصّ الواجهة فقط */
+html[data-theme="dark"] .leaflet-container {
+    background: #04121f;
+    color: var(--ui-text);
+}
+html[data-theme="dark"] .leaflet-bar {
+    border-color: var(--ui-border-2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+}
+html[data-theme="dark"] .leaflet-bar a {
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    border-bottom-color: var(--ui-border);
+}
+html[data-theme="dark"] .leaflet-bar a:hover { background: var(--ui-surface-3); color: var(--ui-text); }
+html[data-theme="dark"] .leaflet-bar a.leaflet-disabled { background: var(--ui-surface-2); color: var(--ui-text-3); }
+html[data-theme="dark"] .leaflet-control-attribution {
+    background: rgba(8, 16, 24, .78);
+    color: var(--ui-text-3);
+}
+html[data-theme="dark"] .leaflet-control-attribution a { color: var(--ui-link); }
+html[data-theme="dark"] .leaflet-control-scale-line {
+    background: rgba(8, 16, 24, .6);
+    color: var(--ui-text-2);
+    border-color: var(--ui-text-3);
+    border-top-color: transparent;
+}
+html[data-theme="dark"] .leaflet-popup-content-wrapper,
+html[data-theme="dark"] .leaflet-popup-tip {
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .6);
+}
+html[data-theme="dark"] .leaflet-container a.leaflet-popup-close-button { color: var(--ui-text-2); }
+html[data-theme="dark"] .leaflet-container a.leaflet-popup-close-button:hover { color: var(--ui-text); }
+html[data-theme="dark"] .leaflet-tooltip {
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    border-color: var(--ui-border-2);
+}
+html[data-theme="dark"] .leaflet-tooltip-top::before { border-top-color: var(--ui-surface); }
+html[data-theme="dark"] .leaflet-tooltip-bottom::before { border-bottom-color: var(--ui-surface); }
+html[data-theme="dark"] .leaflet-tooltip-left::before { border-left-color: var(--ui-surface); }
+html[data-theme="dark"] .leaflet-tooltip-right::before { border-right-color: var(--ui-surface); }
+/* شريط الرسم (leaflet-draw) */
+html[data-theme="dark"] .leaflet-draw-toolbar a {
+    background-color: var(--ui-surface);
+    color: var(--ui-text);
+    border-bottom-color: var(--ui-border);
+}
+html[data-theme="dark"] .leaflet-draw-actions a {
+    background: var(--ui-surface-3);
+    color: var(--ui-text);
+    border-color: var(--ui-border-2);
+}
+html[data-theme="dark"] .leaflet-draw-actions a:hover { background: var(--ui-link); }
+
+/* ---------- بطاقات LEGEND والجداول ---------- */
+html[data-theme="dark"] table { color: var(--ui-text); }
+html[data-theme="dark"] th { background: var(--ui-surface-2); color: var(--ui-text); }
+html[data-theme="dark"] td { border-color: var(--ui-border); }
+
+/* ---------- زر تبديل الثيم ---------- */
+.theme-toggle {
+    width: 40px; height: 40px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; cursor: pointer;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .30);
+    color: #fff; font-size: 15px;
+    transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+.theme-toggle:hover { background: rgba(255, 255, 255, .28); transform: translateY(-1px); }
+.theme-toggle:active { transform: scale(.95); }
+.theme-toggle:focus-visible { outline: 2px solid #5eead4; outline-offset: 2px; }
+.header-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+@media (max-width: 400px) {
+    .theme-toggle { width: 36px; height: 36px; border-radius: 10px; font-size: 14px; }
+}
+@media (max-height: 480px) {
+    .theme-toggle { width: 36px; height: 36px; }
+}

@@ -1,0 +1,266 @@
+/* ================================================================
+   منصة جغرافية — شاشة الدخول بهوية الواجهة التعريفية
+   نفس تدرّجات وألوان #gisIntro (داكنة دائمًا، مستقلة عن الثيم)
+   ================================================================ */
+
+/* ---------- الخلفية ---------- */
+#loginScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 16px calc(22px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    color: #e9f2f9;
+    color-scheme: dark;
+    font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
+    background:
+        radial-gradient(120% 85% at 12% -12%, #12507e 0%, transparent 58%),
+        radial-gradient(110% 75% at 92% 108%, #0d7f8c 0%, transparent 55%),
+        linear-gradient(158deg, #041a2c 0%, #06223a 46%, #03121f 100%);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* شبكة خرائط خفيفة (مثل الواجهة التعريفية) */
+#loginScreen::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(94, 234, 212, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(94, 234, 212, .06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(78% 68% at 50% 42%, #000 0%, transparent 76%);
+            mask-image: radial-gradient(78% 68% at 50% 42%, #000 0%, transparent 76%);
+}
+
+/* هالات لونية */
+#loginScreen::after {
+    content: '';
+    position: fixed;
+    inset: -18%;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 14%, rgba(20, 184, 174, .22), transparent 46%),
+        radial-gradient(circle at 84% 82%, rgba(56, 189, 248, .16), transparent 46%);
+}
+
+/* ---------- الصندوق (زجاجي داكن) ---------- */
+#loginScreen .login-box {
+    position: relative;
+    z-index: 2;
+    margin: auto;
+    width: 380px;
+    max-width: 100%;
+    padding: 32px 28px 24px;
+    text-align: center;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, .045);
+    border: 1px solid rgba(255, 255, 255, .09);
+    box-shadow:
+        0 30px 70px -28px rgba(0, 0, 0, .92),
+        0 1px 0 rgba(255, 255, 255, .06) inset;
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+            backdrop-filter: blur(16px) saturate(120%);
+    animation: loginIn .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* ---------- اللوجو ---------- */
+#loginScreen .login-icon {
+    margin: 0 auto 14px;
+    background: transparent;
+    color: #5eead4;
+}
+#loginScreen .login-icon.is-globe {
+    box-shadow:
+        0 16px 34px -14px rgba(0, 0, 0, .95),
+        0 0 18px rgba(34, 211, 238, .32);
+    border-radius: 50%;
+}
+#loginScreen .login-icon.is-globe img { width: 72px; height: 72px; }
+
+/* ---------- النصوص ---------- */
+#loginScreen h2 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+    margin-bottom: 5px;
+}
+#loginScreen .login-sub {
+    color: #8ba8bd;
+    font-size: 11.5px;
+    font-weight: 500;
+    margin-bottom: 22px;
+}
+#loginScreen label {
+    display: block;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    color: #b9cfdd;
+    margin-bottom: 6px;
+    margin-top: 14px;
+}
+
+/* ---------- الحقول ---------- */
+#loginScreen input,
+#loginScreen .login-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .05);
+    color: #e9f2f9;
+    font-size: 13.5px;
+    font-family: inherit;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+#loginScreen .login-input + .login-input { margin-top: 9px; }
+#loginScreen input::placeholder { color: #7d95a8; opacity: 1; }
+#loginScreen input:focus,
+#loginScreen .login-input:focus {
+    outline: none;
+    border-color: #5eead4;
+    background: rgba(94, 234, 212, .06);
+    box-shadow: 0 0 0 3px rgba(94, 234, 212, .14);
+}
+/* إخفاء خلفية الإكمال التلقائي الفاتحة */
+#loginScreen input:-webkit-autofill,
+#loginScreen input:-webkit-autofill:hover,
+#loginScreen input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e9f2f9;
+    -webkit-box-shadow: 0 0 0 1000px #0d2437 inset;
+    caret-color: #e9f2f9;
+}
+
+/* ---------- الأزرار ---------- */
+#loginScreen .login-btn {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 14px;
+    padding: 11px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 0;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    cursor: pointer;
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+#loginScreen .login-btn:active { transform: scale(.982); }
+
+#loginScreen .login-btn-primary {
+    color: #03181c;
+    background: linear-gradient(135deg, #5eead4 0%, #14b8ae 52%, #0d9488 100%);
+    box-shadow: 0 18px 38px -18px rgba(20, 184, 174, .95), 0 1px 0 rgba(255, 255, 255, .38) inset;
+}
+#loginScreen .login-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 44px -18px rgba(20, 184, 174, 1);
+}
+
+#loginScreen .login-btn-ghost {
+    color: #d7e7f2;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+}
+#loginScreen .login-btn-ghost:hover {
+    background: rgba(255, 255, 255, .11);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, .2);
+}
+
+#loginScreen .login-btn-soft {
+    margin-top: 9px;
+    color: #a9f0e5;
+    background: rgba(94, 234, 212, .07);
+    border: 1px solid rgba(94, 234, 212, .22);
+}
+#loginScreen .login-btn-soft:hover {
+    background: rgba(94, 234, 212, .13);
+    border-color: rgba(94, 234, 212, .34);
+    color: #d6fbf5;
+}
+
+/* ---------- الفاصل ---------- */
+#loginScreen .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7d95a8;
+}
+#loginScreen .login-divider span {
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, .12);
+}
+
+/* ---------- الخطأ ---------- */
+#loginScreen .login-error {
+    color: #f28b82;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 10px;
+    min-height: 14px;
+}
+
+/* ---------- الملاحظة والروابط ---------- */
+#loginScreen .login-note {
+    margin-top: 14px;
+    font-size: 11px;
+    line-height: 1.75;
+    color: #7d95a8;
+}
+#loginScreen .login-links {
+    margin-top: 14px;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+#loginScreen .login-links a {
+    font-size: 12px;
+    font-weight: 800;
+    color: #5eead4;
+    text-decoration: none;
+    transition: color .18s ease, opacity .18s ease;
+}
+#loginScreen .login-links a:hover { color: #a9f0e5; text-decoration: underline; }
+
+/* ---------- حركة الظهور ---------- */
+@keyframes loginIn {
+    from { opacity: 0; transform: translateY(14px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #loginScreen .login-box { animation: none !important; }
+}
+
+/* ---------- الموبايل ---------- */
+@media (max-width: 560px) {
+    #loginScreen .login-box { padding: 28px 22px 22px; border-radius: 20px; }
+    #loginScreen h2 { font-size: 19px; }
+}
+@media (max-width: 400px) {
+    #loginScreen { padding: 16px 12px calc(16px + env(safe-area-inset-bottom, 0px)); }
+    #loginScreen .login-box { padding: 24px 18px 18px; }
+    #loginScreen .login-icon.is-globe img { width: 64px; height: 64px; }
+    #loginScreen .login-btn { min-height: 44px; font-size: 13px; }
+}
+@media (max-height: 720px) and (min-width: 561px) {
+    #loginScreen .login-box { padding: 24px 28px 18px; }
+    #loginScreen .login-sub { margin-bottom: 16px; }
+}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0a2a44">
-<title>GIS المياه — نظام معلومات جغرافي متكامل لقطاع المياه | إعداد أ / أحمد محسوب</title>
+<title>منصة جغرافية — خرائط وأدوات تحليل مكاني | إعداد أ / أحمد محسوب</title>
 <meta name="description" content="تطبيق ويب مجاني لإدارة شبكات المياه: طبقات جغرافية، رسم وقياس، تحليل مكاني، تصدير Shapefile/KML/DXF، صور جوية عالية الدقة من مصادر مفتوحة، ويعمل دون إنترنت.">
 <meta name="keywords" content="GIS, نظم المعلومات الجغرافية, قطاع المياه, شبكات المياه, خرائط المياه, خزانات, محطات رفع, تحليل مكاني, Shapefile, KML, DXF, GeoTIFF, صور جوية, water network, web GIS">
 <meta name="author" content="أحمد محسوب">
@@ -12,19 +12,31 @@
 <meta name="google-site-verification" content="sy2CZQJL3Yo10CgOrphD3suYf40Eu9qSfpPAU7M36-Q">
 <link rel="canonical" href="https://geo-spatial-app.github.io/gis-app-web/landing.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="GIS المياه">
-<meta property="og:title" content="GIS المياه — نظام معلومات جغرافي متكامل لقطاع المياه">
+<meta property="og:site_name" content="منصة جغرافية">
+<meta property="og:title" content="منصة جغرافية — خرائط وأدوات تحليل مكاني">
 <meta property="og:description" content="أكثر من 20 أداة جغرافية لإدارة شبكات المياه: رسم، قياس، تحليل مكاني، تصدير متعدد الصيغ، وصور جوية عالية الدقة — ويعمل دون إنترنت.">
 <meta property="og:url" content="https://geo-spatial-app.github.io/gis-app-web/landing.html">
 <meta property="og:image" content="https://geo-spatial-app.github.io/gis-app-web/icons/icon-512.png">
 <meta property="og:locale" content="ar_AR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="GIS المياه — نظام معلومات جغرافي متكامل لقطاع المياه">
+<meta name="twitter:title" content="منصة جغرافية — خرائط وأدوات تحليل مكاني">
 <meta name="twitter:description" content="أكثر من 20 أداة جغرافية لإدارة شبكات المياه، مع تصدير متعدد الصيغ وصور جوية عالية الدقة.">
 <meta name="twitter:image" content="https://geo-spatial-app.github.io/gis-app-web/icons/icon-512.png">
-<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="منصة جغرافية">
+<script>
+    window.__gisInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__gisInstallPrompt = e;
+        try { window.dispatchEvent(new Event('gis:installprompt')); } catch (err) {}
+    });
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -47,7 +59,7 @@ section{scroll-margin-top:80px;}
 .nav{position:sticky; top:0; z-index:100; backdrop-filter:blur(10px); background:rgba(4,24,43,0.86); border-bottom:1px solid rgba(20,184,174,.28);}
 .nav-inner{max-width:1180px; margin:0 auto; padding:10px 22px; display:flex; align-items:center; gap:14px;}
 .brand{display:flex; align-items:center; gap:10px; color:#fff; text-decoration:none; min-width:0;}
-.brand img{width:38px; height:38px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+.brand img{width:40px; height:40px; border-radius:50%; filter:drop-shadow(0 3px 8px rgba(0,0,0,.45));}
 .brand .b-t{font-weight:800; font-size:17px; line-height:1.1; white-space:nowrap;}
 .brand .b-s{font-size:11px; opacity:.8; white-space:nowrap;}
 .nav-links{display:flex; gap:22px; margin-inline-start:auto;}
@@ -195,7 +207,7 @@ section{scroll-margin-top:80px;}
 footer{background:#04182b; color:rgba(255,255,255,.72); padding:52px 0 26px;}
 .foot-grid{display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:36px; padding-bottom:34px; border-bottom:1px solid rgba(255,255,255,.12);}
 .foot-brand{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
-.foot-brand img{width:44px; height:44px;}
+.foot-brand img{width:44px; height:44px; border-radius:50%;}
 .foot-brand b{color:#fff; font-size:18px; display:block;}
 .foot-brand small{font-size:12px; opacity:.75;}
 footer p{font-size:13.5px; line-height:1.9; max-width:360px;}
@@ -213,9 +225,9 @@ footer ul a:hover{color:#5eead4;}
 <nav class="nav">
     <div class="nav-inner">
         <a class="brand" href="#top">
-            <img src="icons/logo.svg" alt="شعار GIS المياه">
+            <img src="icons/logo.png" alt="شعار منصة جغرافية">
             <span>
-                <span class="b-t">GIS المياه</span>
+                <span class="b-t">منصة جغرافية</span>
                 <span class="b-s">نظام معلومات جغرافي لقطاع المياه</span>
             </span>
         </a>
@@ -239,6 +251,7 @@ footer ul a:hover{color:#5eead4;}
             <p class="lead">منصة ويب واحدة تجمع الطبقات الجغرافية، الرسم والقياس، التحليل المكاني، الصور الجوية عالية الدقة، والتصدير بصيغ متعددة — بسرعة وبساطة على الجوال والحاسوب.</p>
             <div class="hero-btns">
                 <a class="btn btn-primary" href="index.html"><i class="fas fa-play"></i> افتح التطبيق الآن</a>
+                <button class="btn btn-ghost" type="button" id="landingInstallBtn"><i class="fas fa-mobile-screen-button"></i> تثبيت التطبيق</button>
                 <a class="btn btn-ghost" href="#features"><i class="fas fa-layer-group"></i> استعرض المميزات</a>
             </div>
             <div class="chips">
@@ -415,8 +428,8 @@ footer ul a:hover{color:#5eead4;}
         <div class="foot-grid">
             <div>
                 <div class="foot-brand">
-                    <img src="icons/logo.svg" alt="شعار GIS المياه">
-                    <span><b>GIS المياه</b><small>نظام معلومات جغرافي لقطاع المياه</small></span>
+                    <img src="icons/logo.png" alt="شعار منصة جغرافية">
+                    <span><b>منصة جغرافية</b><small>خرائط · بيانات · تحليل مكاني</small></span>
                 </div>
                 <p>منصة ويب متكاملة لإدارة شبكات المياه: طبقات، رسم، قياس، تحليل مكاني، صور جوية، وتصدير متعدد الصيغ — تعمل على الجوال والحاسوب ودون إنترنت.</p>
             </div>
@@ -441,7 +454,7 @@ footer ul a:hover{color:#5eead4;}
             </div>
         </div>
         <div class="foot-bottom">
-            <span>© <span id="yr">2026</span> GIS المياه — جميع الحقوق محفوظة.</span>
+            <span>© <span id="yr">2026</span> منصة جغرافية — جميع الحقوق محفوظة.</span>
             <span>صُنع بعناية لقطاع المياه <a href="index.html">افتح التطبيق</a></span>
         </div>
     </div>
@@ -451,7 +464,7 @@ footer ul a:hover{color:#5eead4;}
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "GIS المياه",
+  "name": "منصة جغرافية",
   "alternateName": "نظام المعلومات الجغرافية لقطاع المياه",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web (Android, iOS, Windows, macOS, Linux)",
@@ -488,6 +501,21 @@ var burger = document.getElementById('burger');
 var links = document.getElementById('navLinks');
 burger.addEventListener('click', function () { links.classList.toggle('open'); });
 links.addEventListener('click', function (e) { if (e.target.tagName === 'A') links.classList.remove('open'); });
+</script>
+<script src="js/gis-pwa-install.js"></script>
+<script>
+(function () {
+    var b = document.getElementById('landingInstallBtn');
+    if (!b) { return; }
+    if (window.GisInstall && window.GisInstall.isStandalone()) {
+        b.style.display = 'none';
+        return;
+    }
+    b.addEventListener('click', function () {
+        if (window.GisInstall) { window.GisInstall.install(); }
+        else { location.href = 'index.html'; }
+    });
+})();
 </script>
 </body>
 </html>

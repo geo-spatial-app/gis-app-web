@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8" />
@@ -7,12 +7,35 @@
     <!-- ===== PWA: تحويل التطبيق إلى موبايل أبلكيشن ===== -->
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#0a2a44" />
+    <!-- تطبيق الوضع (فاتح/داكن) قبل الرسم لمنع الوميض -->
+    <script>
+        (function () {
+            try {
+                var m = localStorage.getItem('gisTheme') || 'dark';
+                var dark = m === 'dark';
+                document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+                if (dark) {
+                    var mt = document.querySelector('meta[name="theme-color"]');
+                    if (mt) { mt.setAttribute('content', '#04121f'); }
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <!-- التقاط حدث التثبيت مبكراً قبل تحميل بقية السكربتات -->
+    <script>
+        window.__gisInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            window.__gisInstallPrompt = e;
+            try { window.dispatchEvent(new Event('gis:installprompt')); } catch (err) {}
+        });
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="GIS المياه" />
-    <meta name="application-name" content="GIS المياه" />
-    <meta name="description" content="تطبيق ويب متكامل لإدارة شبكات المياه: طبقات جغرافية، رفع ملفات، رسم، قياسات، تحليل مكاني، وتصدير Shapefile/KML/DXF." />
+    <meta name="apple-mobile-web-app-title" content="منصة جغرافية" />
+    <meta name="application-name" content="منصة جغرافية" />
+    <meta name="description" content="منصة جغرافية متكاملة لإدارة شبكات المياه: طبقات خرائط، رفع ملفات، رسم، قياسات، تحليل مكاني، وتصدير Shapefile/KML/DXF." />
     <meta name="keywords" content="GIS, نظم المعلومات الجغرافية, قطاع المياه, شبكات المياه, خرائط المياه, خزانات, محطات رفع, تحليل مكاني, Shapefile, KML, DXF, تصدير, water network, GIS app" />
     <meta name="author" content="أحمد محسوب" />
     <meta name="robots" content="index, follow" />
@@ -21,26 +44,77 @@
 
     <!-- ===== SEO / مشاركة الروابط (Open Graph + Twitter) ===== -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="GIS المياه" />
-    <meta property="og:title" content="GIS المياه — تطبيق نظم المعلومات الجغرافية لقطاع المياه" />
-    <meta property="og:description" content="تطبيق ويب متكامل لإدارة شبكات المياه: طبقات جغرافية، رفع ملفات، رسم، قياسات، تحليل مكاني، وتصدير Shapefile/KML/DXF." />
+    <meta property="og:site_name" content="منصة جغرافية" />
+    <meta property="og:title" content="منصة جغرافية — خرائط وأدوات تحليل مكاني" />
+    <meta property="og:description" content="منصة جغرافية متكاملة لإدارة شبكات المياه: طبقات خرائط، رفع ملفات، رسم، قياسات، تحليل مكاني، وتصدير Shapefile/KML/DXF." />
     <meta property="og:url" content="https://geo-spatial-app.github.io/gis-app-web/" />
     <meta property="og:image" content="https://geo-spatial-app.github.io/gis-app-web/icons/icon-512.png" />
     <meta property="og:locale" content="ar_AR" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GIS المياه — تطبيق نظم المعلومات الجغرافية لقطاع المياه" />
+    <meta name="twitter:title" content="منصة جغرافية — خرائط وأدوات تحليل مكاني" />
     <meta name="twitter:description" content="تطبيق ويب لشبكات المياه: طبقات، رفع ملفات، رسم، قياسات، تحليل مكاني، وتصدير." />
     <meta name="twitter:image" content="https://geo-spatial-app.github.io/gis-app-web/icons/icon-512.png" />
-    <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-    <title>GIS المياه — تطبيق نظم المعلومات الجغرافية لقطاع المياه | إعداد أ / أحمد محسوب</title>
+    <title>منصة جغرافية — خرائط وأدوات تحليل مكاني | إعداد أ / أحمد محسوب</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.12.0/maplibre-gl.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <style>
+        /* ============================================================
+           لوحة الألوان الموحّدة (Design Tokens)
+           الوضع الداكن = هوية الواجهة التعريفية (افتراضي)
+           والفاتح متاح من زر التبديل في الهيدر
+           ============================================================ */
+        :root {
+            color-scheme: light;
+            --ui-bg:#eef5f8;
+            --ui-surface:#ffffff;
+            --ui-surface-2:#f8fafc;
+            --ui-surface-3:#eef4f8;
+            --ui-border:#dbe4ec;
+            --ui-border-2:#c9d6e2;
+            --ui-text:#0a2a44;
+            --ui-text-2:#5b7183;
+            --ui-text-3:#8fa3b6;
+            --ui-link:#1a5a8a;
+            --ui-ok:#0e8f8a;
+            --ui-warn:#e8973a;
+            --ui-danger:#c0392b;
+            --ui-tint-info:#eef6fb;
+            --ui-tint-ok:#e9f6f3;
+            --ui-tint-warn:#fdf4e8;
+            --ui-tint-err:#fdeceb;
+            --ui-tint-accent:#eef0fb;
+            --ui-shadow:rgba(10,42,68,.14);
+            --ui-glass:rgba(255,255,255,.95);
+        }
+        html[data-theme="dark"] {
+            color-scheme: dark;
+            --ui-bg:#04121f;
+            --ui-surface:#06223a;
+            --ui-surface-2:#082a45;
+            --ui-surface-3:#0b3350;
+            --ui-border:#123f5d;
+            --ui-border-2:#1a5170;
+            --ui-text:#e9f2f9;
+            --ui-text-2:#a9c1d3;
+            --ui-text-3:#7d95a8;
+            --ui-link:#5eead4;
+            --ui-ok:#2dd4bf;
+            --ui-warn:#f0b429;
+            --ui-danger:#f28b82;
+            --ui-tint-info:#0a2740;
+            --ui-tint-ok:#0a2f2c;
+            --ui-tint-warn:#2b2312;
+            --ui-tint-err:#2e1a1c;
+            --ui-tint-accent:#0d2340;
+            --ui-shadow:rgba(0,0,0,.55);
+            --ui-glass:rgba(6,34,58,.94);
+        }
         /* ===== أبعاد موحّدة لكل التليفونات ===== */
         :root {
             --vh:100vh;                 /* ارتفاع الشاشة الحقيقي (يتحول لـ dvh لو مدعوم) */
@@ -55,14 +129,14 @@
         @supports (height:100dvh) { :root { --vh:100dvh; } }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { height:var(--vh); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-        body { font-family:'Tajawal',sans-serif; background:#eef5f8; height:var(--vh); overflow:hidden; display:flex; flex-direction:column; }
-        .header { position:relative; overflow:hidden; background:linear-gradient(115deg,#04182b 0%,#0a2a44 30%,#12507e 62%,#0d7f8c 100%); color:white; padding:10px calc(22px + var(--sar)) 10px calc(22px + var(--sal)); padding-top:calc(10px + var(--sat)); display:flex; justify-content:space-between; align-items:center; gap:8px; flex-shrink:0; height:calc(var(--hdr) + var(--sat)); box-shadow:0 6px 22px rgba(4,24,43,0.38); border-bottom:2px solid #14b8ae; z-index:100; }
+        body { font-family:'Tajawal',sans-serif; background:var(--ui-surface-2); height:var(--vh); overflow:hidden; display:flex; flex-direction:column; }
+        .header { position:relative; overflow:hidden; background:linear-gradient(115deg,#04182b 0%,#0a2a44 30%,#12507e 62%,#0d7f8c 100%); color:white; padding:10px calc(22px + var(--sar)) 10px calc(22px + var(--sal)); padding-top:calc(10px + var(--sat)); display:flex; justify-content:space-between; align-items:center; gap:8px; flex-shrink:0; height:calc(var(--hdr) + var(--sat)); box-shadow:0 6px 22px rgba(4,24,43,0.38); border-bottom:2px solid var(--ui-ok); z-index:100; }
         .header::before { content:''; position:absolute; inset:0; background:radial-gradient(120% 220% at 10% -30%, rgba(20,184,174,0.42) 0%, transparent 46%), radial-gradient(100% 200% at 95% 130%, rgba(56,189,248,0.32) 0%, transparent 52%), repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 9px); pointer-events:none; }
         .header > * { position:relative; z-index:1; }
         .header .logo { display:flex; align-items:center; gap:8px; min-width:0; }
         .header .logo > div { min-width:0; }
-        .header .logo .icon { width:44px; height:44px; padding:0; font-size:24px; object-fit:contain; border-radius:13px; background:rgba(255,255,255,0.14); border:1.5px solid rgba(255,255,255,0.42); box-shadow:0 0 0 3px rgba(20,184,174,0.28), 0 6px 16px rgba(0,0,0,0.35); flex-shrink:0; }
-        .header .logo .title { font-size:19px; font-weight:800; letter-spacing:.2px; line-height:1.25; text-shadow:0 1px 7px rgba(0,0,0,0.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .header .logo .icon { width:44px; height:44px; padding:0; font-size:24px; object-fit:contain; border-radius:50%; background:transparent; border:0; box-shadow:0 0 16px rgba(34,211,238,0.42), 0 6px 16px var(--ui-shadow); flex-shrink:0; }
+        .header .logo .title { font-size:19px; font-weight:800; letter-spacing:.2px; line-height:1.25; text-shadow:0 1px 7px var(--ui-shadow); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .header .logo .subtitle { font-size:11.5px; opacity:0.88; letter-spacing:.4px; line-height:1.3; }
         .header .status { display:flex; align-items:center; gap:8px; font-size:12.5px; line-height:1; background:rgba(255,255,255,0.1); padding:7px 16px; border-radius:20px; white-space:nowrap; }
         .header .status .dot { width:8px; height:8px; background:#4ade80; border-radius:50%; animation:pulse 1.5s infinite; }
@@ -95,116 +169,116 @@
         .header button i, .menu-toggle i { font-size:1em; }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
         .app { display:flex; flex:1; min-height:0; overflow:hidden; }
-        .sidebar { width:380px; min-width:380px; background:white; border-left:1px solid #ddd; display:flex; flex-direction:column; overflow:hidden; box-shadow:2px 0 10px rgba(0,0,0,0.05); z-index:10; }
-        .sidebar .tabs { display:flex; border-bottom:2px solid #e8f4f8; flex-shrink:0; background:#f8fafc; }
-        .sidebar .tabs button { flex:1; padding:10px 4px; border:none; background:transparent; font-size:12px; font-weight:600; color:#666; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .sidebar .tabs button:hover { background:#f0f4f8; }
-        .sidebar .tabs button.active { color:#0a2a44; border-bottom-color:#1a5a8a; background:#f0f7fc; }
+        .sidebar { width:380px; min-width:380px; background:var(--ui-surface); border-left:1px solid var(--ui-border-2); display:flex; flex-direction:column; overflow:hidden; box-shadow:2px 0 10px var(--ui-shadow); z-index:10; }
+        .sidebar .tabs { display:flex; border-bottom:2px solid var(--ui-border); flex-shrink:0; background:var(--ui-surface-2); }
+        .sidebar .tabs button { flex:1; padding:10px 4px; border:none; background:transparent; font-size:12px; font-weight:600; color:var(--ui-text-2); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .sidebar .tabs button:hover { background:var(--ui-surface-2); }
+        .sidebar .tabs button.active { color:var(--ui-text); border-bottom-color:var(--ui-link); background:var(--ui-surface-2); }
         .sidebar .content { flex:1; overflow-y:auto; padding:10px; }
         .sidebar .content::-webkit-scrollbar { width:4px; }
-        .sidebar .content::-webkit-scrollbar-thumb { background:#c0c8d4; border-radius:10px; }
+        .sidebar .content::-webkit-scrollbar-thumb { background:var(--ui-border-2); border-radius:10px; }
         .sidebar .tab-pane { display:none; }
         .sidebar .tab-pane.active { display:block; }
-        .tab-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid #e8f4f8; }
-        .tab-header h4 { font-size:14px; color:#0a2a44; display:flex; align-items:center; gap:6px; }
+        .tab-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid var(--ui-border); }
+        .tab-header h4 { font-size:14px; color:var(--ui-text); display:flex; align-items:center; gap:6px; }
         .tab-header .add-btn { background:#1a5a8a; color:white; border:none; border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:4px; }
         .tab-header .add-btn:hover { background:#0a2a44; transform:scale(1.02); }
-        .search-box { width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; margin-bottom:10px; background:#fafcfc; }
-        .empty-state { text-align:center; padding:30px 15px; color:#999; }
+        .search-box { width:100%; padding:8px 12px; border:1px solid var(--ui-border-2); border-radius:8px; font-size:13px; margin-bottom:10px; background:var(--ui-surface-2); }
+        .empty-state { text-align:center; padding:30px 15px; color:var(--ui-text-2); }
         .empty-state .big-icon { font-size:40px; margin-bottom:10px; opacity:0.5; }
-        .upload-area { padding:12px; border-top:1px solid #e1ecf1; flex-shrink:0; background:#f8fafc; }
+        .upload-area { padding:12px; border-top:1px solid var(--ui-border); flex-shrink:0; background:var(--ui-surface-2); }
         .upload-area .upload-btn { width:100%; padding:11px; background:linear-gradient(135deg,#0a2a44,#1a5a8a); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px; }
         .upload-area .upload-btn:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(10,42,68,0.32); }
-        .upload-hint { margin-top:8px; font-size:10.5px; color:#8a97a3; text-align:center; }
+        .upload-hint { margin-top:8px; font-size:10.5px; color:var(--ui-text-3); text-align:center; }
         .save-row { display:flex; gap:6px; margin-top:8px; }
         .save-row .save-btn { flex:1; padding:9px; background:linear-gradient(135deg,#0e8f8a,#14b8ae); color:white; border:none; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:7px; }
         .save-row .save-btn:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(14,143,138,0.32); }
-        .save-row .export-btn { width:40px; flex-shrink:0; background:#fff; color:#0a2a44; border:1px solid #d8e2e8; border-radius:10px; cursor:pointer; font-size:14px; transition:all 0.2s; }
-        .save-row .export-btn:hover { background:#eef5f8; border-color:#1a5a8a; color:#1a5a8a; }
+        .save-row .export-btn { width:40px; flex-shrink:0; background:var(--ui-surface); color:var(--ui-text); border:1px solid var(--ui-border); border-radius:10px; cursor:pointer; font-size:14px; transition:all 0.2s; }
+        .save-row .export-btn:hover { background:var(--ui-surface-2); border-color:var(--ui-link); color:var(--ui-link); }
         .save-status { margin-top:6px; font-size:11px; text-align:center; min-height:14px; font-weight:600; }
-        .map-wrapper { flex:1; min-width:0; min-height:0; position:relative; background:#dce8f0; }
+        .map-wrapper { flex:1; min-width:0; min-height:0; position:relative; background:var(--ui-surface-3); }
         #map { width:100%; height:100%; }
 #map .leaflet-top.leaflet-left { display:none !important; }
         /* ===== صندوق البحث عن الأماكن ===== */
         .geo-search-wrap { position:absolute; top:15px; right:15px; z-index:1000; min-width:230px; max-width:38vw; }
-        .geo-search { display:flex; align-items:center; background:#f2f6fa; border-radius:999px; box-shadow:0 4px 20px rgba(0,0,0,0.15); border:1.5px solid #d7e3ee; transition:border-color 0.2s, box-shadow 0.2s; }
-        .geo-search:focus-within { border-color:#1a5a8a; box-shadow:0 4px 20px rgba(26,90,138,0.3); }
-.geo-search input { flex:1; border:none; outline:none; padding:7px 13px; font-size:12px; font-family:inherit; color:#0a2a44; min-width:0; background:transparent; border-radius:999px 0 0 999px; }
-.geo-search input::placeholder { color:#93a4b5; }
+        .geo-search { display:flex; align-items:center; background:var(--ui-surface-2); border-radius:999px; box-shadow:0 4px 20px var(--ui-shadow); border:1.5px solid var(--ui-border); transition:border-color 0.2s, box-shadow 0.2s; }
+        .geo-search:focus-within { border-color:var(--ui-link); box-shadow:0 4px 20px rgba(26,90,138,0.3); }
+.geo-search input { flex:1; border:none; outline:none; padding:7px 13px; font-size:12px; font-family:inherit; color:var(--ui-text); min-width:0; background:transparent; border-radius:999px 0 0 999px; }
+.geo-search input::placeholder { color:var(--ui-text-3); }
 .geo-search button { background:linear-gradient(135deg,#0a2a44,#1a5a8a); color:white; border:none; margin:3px; border-radius:999px; width:29px; height:29px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; flex-shrink:0; box-shadow:0 2px 8px rgba(10,42,68,0.3); transition:transform 0.2s, box-shadow 0.2s; }
-.geo-search .geo-clear { background:#e6edf3; color:#5b7183; box-shadow:none; margin:0 3px 0 0; font-size:13px; display:none; }
+.geo-search .geo-clear { background:var(--ui-surface-3); color:var(--ui-text); box-shadow:none; margin:0 3px 0 0; font-size:13px; display:none; }
 .geo-search.has-value .geo-clear { display:flex; }
-.geo-search .geo-clear:hover { background:#d6e0ea; color:#0a2a44; }
+.geo-search .geo-clear:hover { background:var(--ui-border-2); color:var(--ui-text); }
         .geo-search button:hover { transform:scale(1.08); box-shadow:0 4px 12px rgba(10,42,68,0.42); }
         .geo-search button:active { transform:scale(0.95); }
-        .geo-suggest { position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:1005; background:white; border-radius:14px; box-shadow:0 8px 28px rgba(0,0,0,0.22); border:1px solid #e3ebf2; overflow:hidden; display:none; max-height:320px; overflow-y:auto; }
+        .geo-suggest { position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:1005; background:var(--ui-surface); border-radius:14px; box-shadow:0 8px 28px var(--ui-shadow); border:1px solid var(--ui-border); overflow:hidden; display:none; max-height:320px; overflow-y:auto; }
         .geo-suggest.open { display:block; }
-        .geo-suggest-item { padding:11px 16px; font-size:13px; color:#0a2a44; cursor:pointer; text-align:right; display:flex; align-items:center; gap:10px; border-bottom:1px solid #f2f6fa; }
+        .geo-suggest-item { padding:11px 16px; font-size:13px; color:var(--ui-text); cursor:pointer; text-align:right; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--ui-border); }
         .geo-suggest-item:last-child { border-bottom:none; }
-        .geo-suggest-item:hover, .geo-suggest-item.active { background:#eef4f9; }
-        .geo-suggest-item i { color:#1a5a8a; font-size:12px; flex-shrink:0; }
-        .geo-suggest-empty { padding:14px 16px; font-size:13px; color:#93a4b5; text-align:right; }
-        .search-pin { color:#e63946; font-size:38px; text-shadow:0 2px 8px rgba(0,0,0,0.45); filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+        .geo-suggest-item:hover, .geo-suggest-item.active { background:var(--ui-surface-2); }
+        .geo-suggest-item i { color:var(--ui-link); font-size:12px; flex-shrink:0; }
+        .geo-suggest-empty { padding:14px 16px; font-size:13px; color:var(--ui-text-3); text-align:right; }
+        .search-pin { color:var(--ui-danger); font-size:38px; text-shadow:0 2px 8px var(--ui-shadow); filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
         .search-pin-wrap { animation:pinFloat 1.4s ease-in-out infinite; }
         @keyframes pinFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
-        .controls { position:absolute; bottom:calc(15px + var(--sab)); left:50%; transform:translateX(-50%); z-index:500; background:rgba(255,255,255,0.95); padding:8px 18px; border-radius:30px; box-shadow:0 4px 16px rgba(0,0,0,0.1); display:flex; gap:8px; align-items:center; font-size:12px; border:1px solid #ddd; flex-wrap:wrap; justify-content:center; }
-        .controls label { display:flex; align-items:center; gap:6px; cursor:pointer; color:#0a2a44; font-weight:500; }
+        .controls { position:absolute; bottom:calc(15px + var(--sab)); left:50%; transform:translateX(-50%); z-index:500; background:var(--ui-glass); padding:8px 18px; border-radius:30px; box-shadow:0 4px 16px var(--ui-shadow); display:flex; gap:8px; align-items:center; font-size:12px; border:1px solid var(--ui-border-2); flex-wrap:wrap; justify-content:center; }
+        .controls label { display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--ui-text); font-weight:500; }
         .controls label input { accent-color:#1a5a8a; width:16px; height:16px; }
         .controls button { padding:4px 14px; border:none; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; background:#0a2a44; color:white; }
         .controls button:hover { background:#1a5a8a; transform:scale(1.02); }
-        .controls button.outline { background:transparent; color:#0a2a44; border:1px solid #0a2a44; }
+        .controls button.outline { background:transparent; color:var(--ui-text); border:1px solid #0a2a44; }
         .controls button.outline:hover { background:#0a2a44; color:white; }
-        .controls-divider { width:1px; height:18px; background:#ddd; flex-shrink:0; }
-        .controls button.measure-btn { background:#fff; color:#0a2a44; border:1px solid #d8e2e8; }
-        .controls button.measure-btn:hover { background:#fef3e8; color:#e8973a; border-color:#e8973a; }
-        .controls button.measure-btn.active { background:#e8973a; color:white; border-color:#e8973a; box-shadow:0 2px 10px rgba(232,151,58,0.4); }
-        #measurePanel { position:absolute; bottom:calc(80px + var(--sab)); left:calc(15px + var(--sal)); z-index:500; background:rgba(255,255,255,0.97); border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid #ddd; min-width:210px; max-width:260px; display:none; overflow:hidden; }
+        .controls-divider { width:1px; height:18px; background:var(--ui-border-2); flex-shrink:0; }
+        .controls button.measure-btn { background:var(--ui-surface); color:var(--ui-text); border:1px solid var(--ui-border); }
+        .controls button.measure-btn:hover { background:var(--ui-surface-2); color:var(--ui-warn); border-color:var(--ui-warn); }
+        .controls button.measure-btn.active { background:#e8973a; color:white; border-color:var(--ui-warn); box-shadow:0 2px 10px rgba(232,151,58,0.4); }
+        #measurePanel { position:absolute; bottom:calc(80px + var(--sab)); left:calc(15px + var(--sal)); z-index:500; background:var(--ui-glass); border-radius:12px; box-shadow:0 4px 20px var(--ui-shadow); border:1px solid var(--ui-border-2); min-width:210px; max-width:260px; display:none; overflow:hidden; }
         #measurePanel.show { display:block; }
         .measure-panel-header { display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,#e8973a,#d9822a); color:white; padding:8px 12px; font-size:12.5px; font-weight:700; }
         .measure-panel-header button { background:rgba(255,255,255,0.2); border:none; color:white; border-radius:6px; padding:3px 7px; cursor:pointer; font-size:11px; }
         .measure-panel-header button:hover { background:rgba(255,255,255,0.35); }
         #measureList { max-height:160px; overflow-y:auto; padding:6px; }
-        .measure-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; font-size:12px; color:#0a2a44; }
-        .measure-row:hover { background:#fef6ec; }
-        .measure-row .measure-icon { color:#e8973a; width:16px; text-align:center; }
+        .measure-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; font-size:12px; color:var(--ui-text); }
+        .measure-row:hover { background:var(--ui-surface-2); }
+        .measure-row .measure-icon { color:var(--ui-warn); width:16px; text-align:center; }
         .measure-row .measure-value { flex:1; font-weight:700; }
-        .measure-row .measure-remove { background:transparent; border:none; color:#bbb; cursor:pointer; font-size:11px; padding:3px 5px; }
-        .measure-row .measure-remove:hover { color:#c0392b; }
-        #coordPanel { position:absolute; bottom:calc(80px + var(--sab)); left:calc(15px + var(--sal)); z-index:500; background:rgba(255,255,255,0.97); border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.12); border:1px solid #ddd; min-width:240px; max-width:300px; display:none; overflow:hidden; }
+        .measure-row .measure-remove { background:transparent; border:none; color:var(--ui-text-3); cursor:pointer; font-size:11px; padding:3px 5px; }
+        .measure-row .measure-remove:hover { color:var(--ui-danger); }
+        #coordPanel { position:absolute; bottom:calc(80px + var(--sab)); left:calc(15px + var(--sal)); z-index:500; background:var(--ui-glass); border-radius:12px; box-shadow:0 4px 20px var(--ui-shadow); border:1px solid var(--ui-border-2); min-width:240px; max-width:300px; display:none; overflow:hidden; }
         #coordPanel.show { display:block; }
         .coord-panel-header { display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,#0e8f8a,#0a6e6a); color:white; padding:8px 12px; font-size:12.5px; font-weight:700; }
         .coord-panel-header button { background:rgba(255,255,255,0.2); border:none; color:white; border-radius:6px; padding:3px 7px; cursor:pointer; font-size:11px; }
         .coord-panel-header button:hover { background:rgba(255,255,255,0.35); }
         #coordList { max-height:170px; overflow-y:auto; padding:6px; }
-        .coord-item { display:flex; align-items:center; gap:6px; padding:5px 6px; border-radius:7px; font-size:11.5px; background:#f4f9fa; margin-bottom:4px; border:1px solid #e2eef0; }
+        .coord-item { display:flex; align-items:center; gap:6px; padding:5px 6px; border-radius:7px; font-size:11.5px; background:var(--ui-surface-2); margin-bottom:4px; border:1px solid var(--ui-border); }
         .coord-item .c-idx { background:#0e8f8a; color:#fff; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
-        .coord-item .c-txt { flex:1; min-width:0; direction:ltr; text-align:left; font-family:monospace,Courier New; font-size:11px; line-height:1.35; word-break:break-all; color:#0a2a44; }
-        .coord-item .c-del { background:none; border:none; color:#c0392b; cursor:pointer; font-size:12px; padding:2px 4px; }
-        .coord-actions { padding:6px; border-top:1px solid #eee; display:flex; gap:6px; }
+        .coord-item .c-txt { flex:1; min-width:0; direction:ltr; text-align:left; font-family:monospace,Courier New; font-size:11px; line-height:1.35; word-break:break-all; color:var(--ui-text); }
+        .coord-item .c-del { background:none; border:none; color:var(--ui-danger); cursor:pointer; font-size:12px; padding:2px 4px; }
+        .coord-actions { padding:6px; border-top:1px solid var(--ui-border); display:flex; gap:6px; }
         .coord-export { flex:1; background:linear-gradient(135deg,#1e7e34,#14532d); color:#fff; border:none; border-radius:8px; padding:8px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; }
         .coord-export:hover { filter:brightness(1.12); }
-        .coord-hint { font-size:11px; color:#6b8299; background:#f2f8fb; border:1px dashed #cfe0ea; border-radius:8px; padding:7px 9px; margin-bottom:10px; line-height:1.6; }
-        .coord-tool-btn { grid-column:1 / -1; background:linear-gradient(135deg,#0e8f8a,#0a6e6a) !important; border-color:#0e8f8a !important; color:#fff !important; }
+        .coord-hint { font-size:11px; color:var(--ui-text-3); background:var(--ui-surface-2); border:1px dashed var(--ui-border-2); border-radius:8px; padding:7px 9px; margin-bottom:10px; line-height:1.6; }
+        .coord-tool-btn { grid-column:1 / -1; background:linear-gradient(135deg,#0e8f8a,#0a6e6a) !important; border-color:var(--ui-ok) !important; color:#fff !important; }
         .coord-tool-btn:hover { filter:brightness(1.1); }
-        .coord-tool-btn.active { background:#e8973a !important; border-color:#e8973a !important; }
+        .coord-tool-btn.active { background:#e8973a !important; border-color:var(--ui-warn) !important; }
         /* ===== جدول البيانات الوصفية (Attribute Table / UTM) ===== */
-        .attr-tool-btn { grid-column:1 / -1; background:linear-gradient(135deg,#1a5a8a,#0a2a44) !important; border-color:#1a5a8a !important; color:#fff !important; }
+        .attr-tool-btn { grid-column:1 / -1; background:linear-gradient(135deg,#1a5a8a,#0a2a44) !important; border-color:var(--ui-link) !important; color:#fff !important; }
         .attr-tool-btn:hover { filter:brightness(1.12); }
         .attr-actions { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 2px; }
         .attr-btn { padding:8px 14px; border:none; border-radius:8px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
         .attr-btn.excel { background:#1d6f42; color:#fff; }
         .attr-btn.csv { background:#0e8f8a; color:#fff; }
-        .attr-btn.close { background:#eee; color:#666; }
+        .attr-btn.close { background:var(--ui-surface-3); color:var(--ui-text-2); }
         .attr-btn:hover { filter:brightness(1.1); }
-        .attr-badge { padding:2px 8px; border-radius:20px; background:#e7f1f8; color:#1a5a8a; font-size:11px; white-space:nowrap; }
-        .attr-badge.line { background:#eaf1fb; color:#1a5a8a; }
-        .attr-badge.poly { background:#e9f7f4; color:#1f7a6a; }
-        .attr-edit { width:100%; min-width:80px; padding:4px 6px; border:1px solid #d7e3ee; border-radius:6px; font-size:12px; font-family:inherit; background:#fff; box-sizing:border-box; }
-        .attr-edit:focus { outline:none; border-color:#0e8f8a; box-shadow:0 0 0 2px rgba(14,143,138,0.15); }
+        .attr-badge { padding:2px 8px; border-radius:20px; background:var(--ui-surface-3); color:var(--ui-link); font-size:11px; white-space:nowrap; }
+        .attr-badge.line { background:var(--ui-surface-2); color:var(--ui-link); }
+        .attr-badge.poly { background:var(--ui-surface-3); color:var(--ui-ok); }
+        .attr-edit { width:100%; min-width:80px; padding:4px 6px; border:1px solid var(--ui-border); border-radius:6px; font-size:12px; font-family:inherit; background:var(--ui-surface); box-sizing:border-box; }
+        .attr-edit:focus { outline:none; border-color:var(--ui-ok); box-shadow:0 0 0 2px rgba(14,143,138,0.15); }
 .dt-filterbar { display:flex; flex-direction:column; gap:7px; margin:10px 0; }
 .dt-filterbar .data-table-search { margin:0; }
 .dt-fb-row { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
-.dt-field-sel, .dt-field-val { padding:8px 10px; border:1px solid #d7e3ee; border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box; background:#fff; }
+.dt-field-sel, .dt-field-val { padding:8px 10px; border:1px solid var(--ui-border); border-radius:8px; font-size:13px; font-family:inherit; box-sizing:border-box; background:var(--ui-surface); }
 .dt-field-sel { flex:0 0 auto; min-width:150px; }
 .dt-field-val { flex:1 1 140px; min-width:110px; }
 .attr-btn.addcol { background:#0e8f8a; color:#fff; }
@@ -213,20 +287,20 @@
 .fp-edit-btn { width:100%; padding:9px; border:none; border-radius:8px; background:#0e8f8a; color:#fff; font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; }
 .fp-edit-btn:hover { filter:brightness(1.08); }
         .attr-num { width:118px; direction:ltr; text-align:left; font-variant-numeric:tabular-nums; }
-        .attr-ro { color:#555; font-variant-numeric:tabular-nums; direction:ltr; display:inline-block; }
-        .attr-cap { font-size:11px; color:#8a9aa8; font-weight:400; }
-        .attr-row-del { background:#fdecec; color:#c0392b; border:none; border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:12px; }
-        .attr-row-del:hover { background:#f8d7d7; }
-        .attr-col-del { background:transparent; color:#c0392b; border:none; cursor:pointer; font-size:10px; padding:1px 2px; border-radius:4px; opacity:.65; vertical-align:middle; }
-        .attr-col-del:hover { opacity:1; background:#fdecec; }
-        .map-point-num { background:#0e8f8a; color:#fff; border:2px solid #fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.35); font-family:inherit; }
+        .attr-ro { color:var(--ui-text-2); font-variant-numeric:tabular-nums; direction:ltr; display:inline-block; }
+        .attr-cap { font-size:11px; color:var(--ui-text-3); font-weight:400; }
+        .attr-row-del { background:var(--ui-surface-2); color:var(--ui-danger); border:none; border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:12px; }
+        .attr-row-del:hover { background:var(--ui-tint-err); }
+        .attr-col-del { background:transparent; color:var(--ui-danger); border:none; cursor:pointer; font-size:10px; padding:1px 2px; border-radius:4px; opacity:.65; vertical-align:middle; }
+        .attr-col-del:hover { opacity:1; background:var(--ui-surface-2); }
+        .map-point-num { background:#0e8f8a; color:#fff; border:2px solid var(--ui-border); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; box-shadow:0 2px 6px var(--ui-shadow); font-family:inherit; }
         .coord-crosshair, .coord-crosshair #map { cursor:crosshair; }
-        .measure-tooltip { background:#e8973a!important; color:white!important; border:none!important; font-weight:700; font-size:11px; box-shadow:0 2px 8px rgba(0,0,0,0.25); }
-        .measure-tooltip::before { border-top-color:#e8973a!important; }
-        .loader { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:999; background:rgba(255,255,255,0.9); padding:25px 35px; border-radius:16px; text-align:center; display:none; box-shadow:0 8px 30px rgba(0,0,0,0.15); }
-        .loader .spinner { width:40px; height:40px; border:4px solid #e8f4f8; border-top:4px solid #1a5a8a; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 10px; }
+        .measure-tooltip { background:#e8973a!important; color:white!important; border:none!important; font-weight:700; font-size:11px; box-shadow:0 2px 8px var(--ui-shadow); }
+        .measure-tooltip::before { border-top-color:var(--ui-warn)!important; }
+        .loader { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:999; background:var(--ui-glass); padding:25px 35px; border-radius:16px; text-align:center; display:none; box-shadow:0 8px 30px var(--ui-shadow); }
+        .loader .spinner { width:40px; height:40px; border:4px solid var(--ui-border); border-top:4px solid var(--ui-link); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 10px; }
         @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-        .loader p { color:#0a2a44; font-weight:500; font-size:13px; }
+        .loader p { color:var(--ui-text); font-weight:500; font-size:13px; }
         .menu-toggle { display:none; align-items:center; justify-content:center; width:38px; height:38px; flex-shrink:0; background:rgba(255,255,255,0.16); color:#fff; border:1px solid rgba(255,255,255,0.28); border-radius:10px; font-size:17px; cursor:pointer; transition:background 0.2s, transform 0.15s; }
         .menu-toggle:hover { background:rgba(255,255,255,0.3); }
         .menu-toggle:active { transform:scale(0.92); }
@@ -238,7 +312,7 @@
             position:fixed; top:50%; right:calc(12px + var(--sar)); transform:translateY(-50%);
             z-index:2001; width:46px; height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
             background:rgba(12,22,34,.78); color:#e6eef6; border:1px solid rgba(255,255,255,.18); border-radius:14px;
-            cursor:pointer; box-shadow:-6px 0 22px rgba(0,0,0,.35); backdrop-filter:blur(10px) saturate(150%); -webkit-backdrop-filter:blur(10px) saturate(150%);
+            cursor:pointer; box-shadow:-6px 0 22px var(--ui-shadow); backdrop-filter:blur(10px) saturate(150%); -webkit-backdrop-filter:blur(10px) saturate(150%);
             transition:transform .2s, box-shadow .2s, background .2s;
         }
         #advTocHandle:hover { transform:translateY(-50%) scale(1.06); background:rgba(20,184,174,.85); }
@@ -250,57 +324,57 @@
             display:flex; flex-direction:column;
             background:linear-gradient(180deg, rgba(10,20,32,.90), rgba(8,16,26,.86));
             backdrop-filter:blur(18px) saturate(160%); -webkit-backdrop-filter:blur(18px) saturate(160%);
-            border-left:1px solid rgba(255,255,255,.14); box-shadow:-24px 0 60px rgba(0,0,0,.5);
+            border-left:1px solid rgba(255,255,255,.14); box-shadow:-24px 0 60px var(--ui-shadow);
             color:#dbe6f0; transform:translateX(105%); transition:transform .34s cubic-bezier(.4,0,.2,1);
         }
         #advToc.open { transform:translateX(0); }
         .advtoc-head { display:flex; align-items:center; gap:8px; padding:calc(12px + var(--sat)) 14px 12px; border-bottom:1px solid rgba(255,255,255,.1); background:linear-gradient(90deg, rgba(20,184,174,.22), transparent); }
         .advtoc-title { font-weight:800; font-size:14px; display:flex; align-items:center; gap:8px; letter-spacing:.2px; }
-        .advtoc-title i { color:#14b8ae; }
+        .advtoc-title i { color:var(--ui-ok); }
         .advtoc-x { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); color:#cfe0ee; width:30px; height:30px; border-radius:9px; cursor:pointer; }
         .advtoc-x:hover { background:rgba(255,255,255,.18); }
         .advtoc-head-actions { margin-right:auto; display:flex; gap:6px; }
         .advtoc-search { display:flex; align-items:center; gap:8px; margin:12px 14px 6px; padding:8px 12px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:10px; position:sticky; top:0; z-index:6; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
-        .advtoc-search i { color:#7f94a8; font-size:12px; }
+        .advtoc-search i { color:var(--ui-text-3); font-size:12px; }
         .advtoc-search input { flex:1; min-width:0; background:transparent; border:none; outline:none; color:#eaf2f8; font-family:inherit; font-size:12.5px; }
-        .advtoc-search input::placeholder { color:#6d8093; }
+        .advtoc-search input::placeholder { color:var(--ui-text-3); }
         .advtoc-body { flex:1; overflow-y:auto; padding:6px 10px 14px; }
         .advtoc-body::-webkit-scrollbar { width:6px; }
         .advtoc-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,.18); border-radius:10px; }
         .advtoc-group { margin:10px 0 6px; }
         .advtoc-group-head { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; user-select:none; font-weight:700; font-size:12.5px; color:#eaf2f8; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
         .advtoc-group-head:hover { background:rgba(255,255,255,.11); }
-        .advtoc-group-head .g-count { margin-right:auto; font-weight:500; font-size:11px; color:#8fa3b6; }
-        .advtoc-group-head .g-chev { transition:transform .25s; color:#7f94a8; }
+        .advtoc-group-head .g-count { margin-right:auto; font-weight:500; font-size:11px; color:var(--ui-text-3); }
+        .advtoc-group-head .g-chev { transition:transform .25s; color:var(--ui-text-3); }
         .advtoc-group.collapsed .g-chev { transform:rotate(-90deg); }
         .advtoc-group.collapsed .advtoc-group-body { display:none; }
         .advtoc-group-body { padding:6px 4px 2px; }
         .advtoc-layer { display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:10px; transition:background .15s; }
         .advtoc-layer:hover { background:rgba(255,255,255,.07); box-shadow:inset 2px 0 0 #14b8ae; }
-        .advtoc-typeicon { width:14px; text-align:center; color:#7f94a8; font-size:11px; flex-shrink:0; }
-        .advtoc-layer:hover .advtoc-typeicon { color:#14b8ae; }
+        .advtoc-typeicon { width:14px; text-align:center; color:var(--ui-text-3); font-size:11px; flex-shrink:0; }
+        .advtoc-layer:hover .advtoc-typeicon { color:var(--ui-ok); }
         .advtoc-check { width:16px; height:16px; accent-color:#14b8ae; cursor:pointer; flex-shrink:0; }
-        .advtoc-swatch { width:18px; height:18px; border-radius:5px; flex-shrink:0; border:1px solid rgba(255,255,255,.35); box-shadow:0 0 0 2px rgba(0,0,0,.15); }
+        .advtoc-swatch { width:18px; height:18px; border-radius:5px; flex-shrink:0; border:1px solid rgba(255,255,255,.35); box-shadow:0 0 0 2px var(--ui-shadow); }
         .advtoc-swatch.dot { border-radius:50%; }
         .advtoc-name { flex:1; min-width:0; font-size:12.5px; color:#e6eef6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .advtoc-name small { display:block; font-size:10.5px; color:#8fa3b6; margin-top:1px; font-weight:400; }
-        .advtoc-menu-btn { background:transparent; border:none; color:#8fa3b6; width:26px; height:26px; border-radius:7px; cursor:pointer; flex-shrink:0; }
+        .advtoc-name small { display:block; font-size:10.5px; color:var(--ui-text-3); margin-top:1px; font-weight:400; }
+        .advtoc-menu-btn { background:transparent; border:none; color:var(--ui-text-3); width:26px; height:26px; border-radius:7px; cursor:pointer; flex-shrink:0; }
         .advtoc-menu-btn:hover { background:rgba(255,255,255,.14); color:#fff; }
-        .advtoc-del-btn { background:transparent; border:none; color:#ef4444; width:26px; height:26px; border-radius:7px; cursor:pointer; flex-shrink:0; font-size:13px; line-height:1; transition:background .15s,color .15s; }
-        .advtoc-del-btn:hover { background:rgba(239,68,68,.22); color:#ff6b6b; }
+        .advtoc-del-btn { background:transparent; border:none; color:var(--ui-danger); width:26px; height:26px; border-radius:7px; cursor:pointer; flex-shrink:0; font-size:13px; line-height:1; transition:background .15s,color .15s; }
+        .advtoc-del-btn:hover { background:rgba(239,68,68,.22); color:var(--ui-danger); }
         .advtoc-del-btn:active { transform:scale(.9); }
         .advtoc-op { width:58px; flex-shrink:0; height:4px; -webkit-appearance:none; appearance:none; background:rgba(255,255,255,.22); border-radius:3px; cursor:pointer; }
         .advtoc-op::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:#14b8ae; box-shadow:0 0 0 3px rgba(20,184,174,.25); }
-        .advtoc-op.flash { outline:2px solid #14b8ae; outline-offset:3px; }
-        .advtoc-menu { position:fixed; z-index:1300; min-width:192px; background:rgba(14,24,36,.98); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); border-radius:12px; box-shadow:0 14px 44px rgba(0,0,0,.5); padding:5px; }
+        .advtoc-op.flash { outline:2px solid var(--ui-ok); outline-offset:3px; }
+        .advtoc-menu { position:fixed; z-index:1300; min-width:192px; background:rgba(14,24,36,.98); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); border-radius:12px; box-shadow:0 14px 44px var(--ui-shadow); padding:5px; }
         .advtoc-menu button { display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:none; color:#dbe6f0; text-align:right; padding:9px 11px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:12.5px; }
         .advtoc-menu button:hover { background:rgba(20,184,174,.22); color:#fff; }
-        .advtoc-menu button i { width:16px; color:#14b8ae; }
-        .advtoc-menu button.danger, .advtoc-menu button.danger i { color:#ff8a80; }
+        .advtoc-menu button i { width:16px; color:var(--ui-ok); }
+        .advtoc-menu button.danger, .advtoc-menu button.danger i { color:var(--ui-danger); }
         .advtoc-menu .sep { height:1px; background:rgba(255,255,255,.1); margin:4px 2px; }
-        .advtoc-foot { padding:9px 14px; border-top:1px solid rgba(255,255,255,.1); font-size:11px; color:#8fa3b6; text-align:center; }
-        .advtoc-empty { text-align:center; color:#7f94a8; font-size:12px; padding:26px 10px; line-height:1.9; }
-        .advtoc-grip { width:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#7f94a8; cursor:grab; font-size:11px; opacity:.65; touch-action:none; }
+        .advtoc-foot { padding:9px 14px; border-top:1px solid rgba(255,255,255,.1); font-size:11px; color:var(--ui-text-3); text-align:center; }
+        .advtoc-empty { text-align:center; color:var(--ui-text-3); font-size:12px; padding:26px 10px; line-height:1.9; }
+        .advtoc-grip { width:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--ui-text-3); cursor:grab; font-size:11px; opacity:.65; touch-action:none; }
         .advtoc-grip:hover { color:#eaf2f8; opacity:1; }
         .advtoc-grip:active { cursor:grabbing; }
         .advtoc-grip.ghost { cursor:default; }
@@ -317,7 +391,7 @@
             #advToc.open ~ #advTocHandle { right:calc(min(330px,88vw) + 10px + var(--sar)); }
         }
         @media (max-width:768px) {
-            .sidebar { position:fixed; top:var(--app-top); right:calc(-100% - 4px); width:min(290px,86vw); height:calc(var(--vh) - var(--app-top)); padding-bottom:var(--sab); z-index:1000; transition:right 0.3s; box-shadow:4px 0 30px rgba(0,0,0,0.2); }
+            .sidebar { position:fixed; top:var(--app-top); right:calc(-100% - 4px); width:min(290px,86vw); height:calc(var(--vh) - var(--app-top)); padding-bottom:var(--sab); z-index:1000; transition:right 0.3s; box-shadow:4px 0 30px var(--ui-shadow); }
             .sidebar.open { right:0; }
             .menu-toggle { display:flex; }
             .overlay { display:none; position:fixed; top:var(--app-top); left:0; width:100%; height:calc(var(--vh) - var(--app-top)); padding-bottom:var(--sab); background:rgba(0,0,0,0.3); z-index:999; }
@@ -335,7 +409,7 @@
         }
         @media (max-width:400px) {
             .header .logo .title { font-size:13.5px; }
-            .header .logo .icon { width:38px; height:38px; border-radius:11px; }
+            .header .logo .icon { width:38px; height:38px; border-radius:50%; }
             .header .logo .subtitle { display:none; }
             .menu-toggle { width:38px; height:38px; font-size:16px; }
             .geo-search-wrap { top:calc(8px + var(--sat)); right:calc(10px + var(--sar)); left:calc(8px + var(--sal)); min-width:0; max-width:none; width:auto; }
@@ -352,78 +426,78 @@
             .sidebar .content { padding:7px; }
         }
         .location-item, .file-item { display:flex; align-items:center; gap:10px; padding:6px 8px; margin-bottom:3px; border-radius:8px; cursor:pointer; transition:all 0.2s; border:1px solid transparent; }
-        .location-item:hover, .file-item:hover { background:#f0f4f8; }
-        .location-item.active, .file-item.active { background:#d4e8f0; border-color:#1a5a8a; }
-        .location-item .icon, .file-item .icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; background:#e8f4f8; color:#1a5a8a; }
+        .location-item:hover, .file-item:hover { background:var(--ui-surface-2); }
+        .location-item.active, .file-item.active { background:var(--ui-tint-info); border-color:var(--ui-link); }
+        .location-item .icon, .file-item .icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; background:var(--ui-surface-3); color:var(--ui-link); }
         .location-item .info, .file-item .info { flex:1; min-width:0; }
-        .location-item .info .name, .file-item .info .name { font-size:13px; font-weight:600; color:#0a2a44; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .location-item .info .desc, .file-item .info .desc { font-size:11px; color:#888; }
+        .location-item .info .name, .file-item .info .name { font-size:13px; font-weight:600; color:var(--ui-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .location-item .info .desc, .file-item .info .desc { font-size:11px; color:var(--ui-text-2); }
         .location-item .actions, .file-item .actions { display:flex; gap:4px; flex-shrink:0; }
-        .location-item .actions button, .file-item .actions button { background:transparent; border:none; color:#999; cursor:pointer; padding:4px 6px; border-radius:6px; transition:all 0.2s; font-size:13px; }
-        .location-item .actions .delete-loc:hover, .file-item .actions .delete-btn:hover { background:#fee; color:#c0392b; }
-        .file-item .actions .table-btn:hover { background:#e8f4f8; color:#1a5a8a; }
-        .location-item .actions .edit-loc:hover { background:#e8f4f8; color:#1a5a8a; }
-        .location-item .check, .file-item .check { color:#1a5a8a; opacity:0; transition:all 0.3s; }
+        .location-item .actions button, .file-item .actions button { background:transparent; border:none; color:var(--ui-text-2); cursor:pointer; padding:4px 6px; border-radius:6px; transition:all 0.2s; font-size:13px; }
+        .location-item .actions .delete-loc:hover, .file-item .actions .delete-btn:hover { background:var(--ui-surface-2); color:var(--ui-danger); }
+        .file-item .actions .table-btn:hover { background:var(--ui-surface-3); color:var(--ui-link); }
+        .location-item .actions .edit-loc:hover { background:var(--ui-surface-3); color:var(--ui-link); }
+        .location-item .check, .file-item .check { color:var(--ui-link); opacity:0; transition:all 0.3s; }
         .location-item.active .check, .file-item.active .check { opacity:1; }
         /* ===== قائمة الملفات المرفوعة ===== */
         .files-list { margin-top:6px; display:flex; flex-direction:column; gap:2px; }
         .files-search { width:100%; box-sizing:border-box; margin:10px 0 4px; padding:9px 12px; border-radius:10px;
             border:1px solid var(--card-brd,#334155); background:var(--card-bg,#1e293b); color:var(--txt,#e2e8f0);
             font-family:inherit; font-size:12.5px; outline:none; }
-        .files-search::placeholder { color:var(--txt-dim,#94a3b8); }
-        .files-search:focus { border-color:var(--accent,#0284c7); }
+        .files-search::placeholder { color:var(--txt-dim,var(--ui-text-3)); }
+        .files-search:focus { border-color:var(--accent,var(--ui-link)); }
         .file-count-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px;
             padding:0 6px; margin-inline-start:8px; border-radius:10px; background:var(--accent,#0284c7); color:#fff;
             font-size:11px; font-weight:700; vertical-align:middle; }
-        .file-item .delete-btn:hover { color:#fca5a5 !important; background:rgba(220,38,38,.22) !important; }
+        .file-item .delete-btn:hover { color:var(--ui-danger) !important; background:rgba(220,38,38,.22) !important; }
         .draw-tools-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-        .draw-tool-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 8px; border-radius:10px; border:1px solid #d8e2e8; background:#f8fafc; color:#0a2a44; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
-        .draw-tool-btn:hover { background:#eef5f8; border-color:#1a5a8a; }
-        .draw-tool-btn.active { background:#0e8f8a; border-color:#0e8f8a; color:white; }
-        .draw-style { border:1px solid #d8e2e8; border-radius:10px; padding:10px 11px; margin-bottom:12px; background:#f8fafc; }
-        .draw-style .ds-title { font-size:12.5px; font-weight:700; color:#0a2a44; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
-        .draw-style .ds-title i { color:#0e8f8a; }
+        .draw-tool-btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 8px; border-radius:10px; border:1px solid var(--ui-border); background:var(--ui-surface-2); color:var(--ui-text); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .draw-tool-btn:hover { background:var(--ui-surface-2); border-color:var(--ui-link); }
+        .draw-tool-btn.active { background:#0e8f8a; border-color:var(--ui-ok); color:white; }
+        .draw-style { border:1px solid var(--ui-border); border-radius:10px; padding:10px 11px; margin-bottom:12px; background:var(--ui-surface-2); }
+        .draw-style .ds-title { font-size:12.5px; font-weight:700; color:var(--ui-text); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+        .draw-style .ds-title i { color:var(--ui-ok); }
         .draw-style .ds-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
-        .draw-style .ds-row label { font-size:12px; color:#4a5b6a; }
-        .draw-style .ds-row input[type=color] { width:42px; height:26px; border:1px solid #d8e2e8; border-radius:6px; background:#fff; cursor:pointer; padding:1px; }
+        .draw-style .ds-row label { font-size:12px; color:var(--ui-text); }
+        .draw-style .ds-row input[type=color] { width:42px; height:26px; border:1px solid var(--ui-border); border-radius:6px; background:var(--ui-surface); cursor:pointer; padding:1px; }
         .draw-style .ds-row input[type=range] { flex:1; max-width:140px; accent-color:#0e8f8a; }
-        .draw-style .ds-val { font-weight:700; color:#0e8f8a; }
+        .draw-style .ds-val { font-weight:700; color:var(--ui-ok); }
         .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center; }
         .modal-overlay.active { display:flex; }
-        .modal { background:white; border-radius:16px; padding:25px 30px; max-width:420px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.2); animation:modalIn 0.3s ease; }
+        .modal { background:var(--ui-surface); border-radius:16px; padding:25px 30px; max-width:420px; width:90%; box-shadow:0 8px 40px var(--ui-shadow); animation:modalIn 0.3s ease; }
         .modal-wide { max-width:92vw; width:920px; display:flex; flex-direction:column; max-height:90vh; padding:20px 22px; }
-        .data-table-search { width:100%; padding:9px 12px; border:1px solid #d7e3ee; border-radius:8px; font-size:13px; margin:10px 0; font-family:inherit; box-sizing:border-box; }
-        .data-table-wrap { overflow:auto; border:1px solid #e1ecf1; border-radius:10px; max-height:62vh; background:#fff; }
+        .data-table-search { width:100%; padding:9px 12px; border:1px solid var(--ui-border); border-radius:8px; font-size:13px; margin:10px 0; font-family:inherit; box-sizing:border-box; }
+        .data-table-wrap { overflow:auto; border:1px solid var(--ui-border); border-radius:10px; max-height:62vh; background:var(--ui-surface); }
         .data-table-wrap table { border-collapse:collapse; width:100%; font-size:12px; white-space:nowrap; }
         .data-table-wrap th { position:sticky; top:0; background:#0a2a44; color:#fff; padding:8px 10px; text-align:right; font-weight:600; z-index:1; }
-        .data-table-wrap td { border-bottom:1px solid #eef2f5; padding:6px 10px; color:#333; }
-        .data-table-wrap tbody tr:nth-child(even) { background:#f7fafc; }
-        .data-table-wrap tbody tr:hover { background:#eef7f9; }
-        .data-table-wrap tbody tr.dt-selected { background:#d8f3ef !important; box-shadow:inset 3px 0 0 #14b8ae; }
-        .data-table-wrap td.dt-idx { color:#0e8f8a; font-weight:700; text-align:center; }
+        .data-table-wrap td { border-bottom:1px solid var(--ui-border); padding:6px 10px; color:var(--ui-text); }
+        .data-table-wrap tbody tr:nth-child(even) { background:var(--ui-surface-2); }
+        .data-table-wrap tbody tr:hover { background:var(--ui-surface-2); }
+        .data-table-wrap tbody tr.dt-selected { background:var(--ui-tint-ok) !important; box-shadow:inset 3px 0 0 #14b8ae; }
+        .data-table-wrap td.dt-idx { color:var(--ui-ok); font-weight:700; text-align:center; }
         .data-table-wrap tbody tr { cursor:pointer; }
 
         /* ===== لوحة الجدول السفلية (ArcGIS style) ===== */
         .modal-overlay.bottom-sheet { align-items:flex-end; justify-content:stretch; }
         .bottom-sheet .bs-panel { width:100%; max-width:100%; height:48vh; max-height:92vh;
             margin:0; padding:0 18px 14px; border-radius:18px 18px 0 0;
-            display:flex; flex-direction:column; animation:bsUp .26s ease; box-shadow:0 -10px 40px rgba(0,0,0,0.25); }
+            display:flex; flex-direction:column; animation:bsUp .26s ease; box-shadow:0 -10px 40px var(--ui-shadow); }
         .bottom-sheet.collapsed .bs-panel { height:auto; }
         .bottom-sheet.collapsed .data-table-wrap,
         .bottom-sheet.collapsed .bs-sub,
         .bottom-sheet.collapsed .data-table-search { display:none; }
         @keyframes bsUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
         .bs-grip { height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
-        .bs-grip span { width:54px; height:5px; border-radius:6px; background:#cfd8e0; transition:background .2s; }
+        .bs-grip span { width:54px; height:5px; border-radius:6px; background:var(--ui-border-2); transition:background .2s; }
         .bs-grip:hover span { background:#14b8ae; }
         .bs-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; }
-        .bs-head h3 { margin:0; font-size:15px; color:#0a2a44; display:flex; align-items:center; gap:8px; }
-        .bs-head h3 i { color:#14b8ae; }
+        .bs-head h3 { margin:0; font-size:15px; color:var(--ui-text); display:flex; align-items:center; gap:8px; }
+        .bs-head h3 i { color:var(--ui-ok); }
         .bs-tools { display:flex; gap:7px; flex-wrap:wrap; }
         .attr-btn.zoom { background:#0a2a44; color:#fff; }
         .bs-sub { display:flex; align-items:center; justify-content:space-between; gap:10px;
-            font-size:12px; color:#7a869a; margin:6px 2px 0; flex:none; }
-        .bs-sub #dtSelection { color:#0e8f8a; font-weight:600; }
+            font-size:12px; color:var(--ui-text-3); margin:6px 2px 0; flex:none; }
+        .bs-sub #dtSelection { color:var(--ui-ok); font-weight:600; }
         .bottom-sheet .data-table-wrap { max-height:none; flex:1 1 auto; margin-bottom:2px; }
         @media (max-width:520px) {
             .bottom-sheet .bs-panel { height:54vh; padding:0 10px 10px; }
@@ -431,26 +505,26 @@
             .bs-tools .attr-btn { padding:8px 10px; }
         }
         @keyframes modalIn { from{transform:scale(0.9);opacity:0} to{transform:scale(1);opacity:1} }
-        .modal h3 { color:#0a2a44; margin-bottom:15px; display:flex; align-items:center; gap:8px; }
-        .modal label { display:block; font-size:13px; font-weight:600; color:#333; margin-top:12px; margin-bottom:4px; }
-        .modal input, .modal textarea, .modal select { width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; font-family:inherit; transition:border 0.2s; }
-        .modal input:focus, .modal textarea:focus, .modal select:focus { border-color:#1a5a8a; outline:none; }
+        .modal h3 { color:var(--ui-text); margin-bottom:15px; display:flex; align-items:center; gap:8px; }
+        .modal label { display:block; font-size:13px; font-weight:600; color:var(--ui-text); margin-top:12px; margin-bottom:4px; }
+        .modal input, .modal textarea, .modal select { width:100%; padding:8px 12px; border:1px solid var(--ui-border-2); border-radius:8px; font-size:13px; font-family:inherit; transition:border 0.2s; }
+        .modal input:focus, .modal textarea:focus, .modal select:focus { border-color:var(--ui-link); outline:none; }
         .modal textarea { resize:vertical; min-height:50px; }
         .modal .modal-actions { display:flex; gap:10px; margin-top:18px; justify-content:flex-end; }
         .modal .modal-actions button { padding:8px 20px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
         .modal .modal-actions .save-btn { background:#1a5a8a; color:white; }
         .modal .modal-actions .save-btn:hover { background:#0a2a44; }
-        .modal .modal-actions .cancel-btn { background:#eee; color:#666; }
-        .modal .modal-actions .cancel-btn:hover { background:#ddd; }
+        .modal .modal-actions .cancel-btn { background:var(--ui-surface-3); color:var(--ui-text-2); }
+        .modal .modal-actions .cancel-btn:hover { background:var(--ui-border-2); }
         #view3DOverlay { display:none; position:fixed; inset:0; z-index:5000; background:#000; }
         #map3dContainer { width:100%; height:100%; }
-        #close3DBtn { position:absolute; top:15px; right:15px; z-index:10; background:white; border:none; border-radius:10px; padding:10px 18px; font-weight:700; font-size:13px; font-family:inherit; color:#0a2a44; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,0.35); display:flex; align-items:center; gap:8px; }
+        #close3DBtn { position:absolute; top:15px; right:15px; z-index:10; background:var(--ui-surface); border:none; border-radius:10px; padding:10px 18px; font-weight:700; font-size:13px; font-family:inherit; color:var(--ui-text); cursor:pointer; box-shadow:0 4px 16px var(--ui-shadow); display:flex; align-items:center; gap:8px; }
         .detail-popup { max-width:320px; font-size:13px; }
         .detail-popup table { width:100%; border-collapse:collapse; }
-        .upload-area.dragover { outline:2px dashed #1a5a8a; outline-offset:-4px; background:#eef7fb; }
-        .error-note { color:#c0392b; font-size:11px; margin-top:6px; line-height:1.5; }
-        .detail-popup td { padding:4px 8px; border-bottom:1px solid #eee; }
-        .detail-popup td:first-child { font-weight:700; color:#0a2a44; width:40%; }
+        .upload-area.dragover { outline:2px dashed var(--ui-link); outline-offset:-4px; background:var(--ui-surface-2); }
+        .error-note { color:var(--ui-danger); font-size:11px; margin-top:6px; line-height:1.5; }
+        .detail-popup td { padding:4px 8px; border-bottom:1px solid var(--ui-border); }
+        .detail-popup td:first-child { font-weight:700; color:var(--ui-text); width:40%; }
         .detail-popup td:last-child { text-align:left; }
         /* ===== النافذة المنبثقة لخصائص الميزة (Feature Popup) — داكنة احترافية ===== */
         .leaflet-popup-content-wrapper { background:#0f172a !important; color:#e2e8f0 !important; border:1px solid #334155; border-radius:12px; box-shadow:0 14px 40px rgba(0,0,0,.55); padding:0; overflow:hidden; }
@@ -472,26 +546,26 @@
         .fp-table tr:nth-child(even) td { background:#1e293b; }
         .fp-table td:first-child { color:#7dd3fc; font-weight:700; width:42%; padding-inline-end:8px; white-space:nowrap; }
         .fp-table td:last-child { color:#e2e8f0; }
-        .fp-empty { padding:12px 13px; color:#94a3b8; font-size:12px; }
+        .fp-empty { padding:12px 13px; color:var(--ui-text-3); font-size:12px; }
         .fp-foot { background:#0b1220; border-top:1px solid #334155; padding:8px 12px 10px; direction:ltr; text-align:left; }
         .fp-foot-title { color:#7dd3fc; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
         .fp-foot-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; }
-        .fp-foot-grid span { color:#94a3b8; font-size:11.5px; white-space:nowrap; }
-        .fp-foot-grid b { color:#10b981; font-weight:700; margin-inline-end:5px; }
+        .fp-foot-grid span { color:var(--ui-text-3); font-size:11.5px; white-space:nowrap; }
+        .fp-foot-grid b { color:var(--ui-ok); font-weight:700; margin-inline-end:5px; }
         /* ===== نبض تمييز العنصر المحدد على الخريطة ===== */
         @keyframes gisHlPulse { 0%,100%{ stroke-opacity:1; } 50%{ stroke-opacity:.3; } }
         .gis-hl { animation: gisHlPulse 1.2s ease-in-out infinite; filter: drop-shadow(0 0 6px #f59e0b) drop-shadow(0 0 3px #fbbf24); }
         /* ===== لوحة التحكم بالطبقة (منبثقة) ===== */
         .control-panel-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:3000; justify-content:center; align-items:center; }
         .control-panel-overlay.active { display:flex; }
-        .control-panel { background:white; border-radius:16px; padding:22px 26px; width:330px; max-width:92vw; box-shadow:0 12px 50px rgba(0,0,0,0.3); animation:modalIn 0.25s ease; max-height:92vh; overflow-y:auto; }
-        .control-panel h3 { display:flex; align-items:center; gap:8px; color:#0a2a44; margin-bottom:4px; }
-        .control-panel .cp-desc { font-size:12px; color:#888; margin-bottom:14px; }
+        .control-panel { background:var(--ui-surface); border-radius:16px; padding:22px 26px; width:330px; max-width:92vw; box-shadow:0 12px 50px var(--ui-shadow); animation:modalIn 0.25s ease; max-height:92vh; overflow-y:auto; }
+        .control-panel h3 { display:flex; align-items:center; gap:8px; color:var(--ui-text); margin-bottom:4px; }
+        .control-panel .cp-desc { font-size:12px; color:var(--ui-text-2); margin-bottom:14px; }
         .cp-row { margin-bottom:14px; }
-        .cp-row label { display:block; font-size:12.5px; font-weight:700; color:#333; margin-bottom:6px; }
-        .cp-row .cp-value { font-weight:600; color:#1a5a8a; }
+        .cp-row label { display:block; font-size:12.5px; font-weight:700; color:var(--ui-text); margin-bottom:6px; }
+        .cp-row .cp-value { font-weight:600; color:var(--ui-link); }
         .cp-colors { display:flex; flex-wrap:wrap; gap:6px; }
-        .cp-colors .cp-color { width:28px; height:28px; border-radius:50%; border:2px solid #ddd; cursor:pointer; transition:0.15s; }
+        .cp-colors .cp-color { width:28px; height:28px; border-radius:50%; border:2px solid var(--ui-border-2); cursor:pointer; transition:0.15s; }
         .cp-colors .cp-color:hover, .cp-colors .cp-color.sel { transform:scale(1.2); border-color:#0a2a44; box-shadow:0 0 0 2px #fff,0 0 0 4px #1a5a8a; }
         .cp-input { width:100%; height:34px; border:none; padding:0; cursor:pointer; margin-top:6px; }
         .cp-range { width:100%; accent-color:#1a5a8a; }
@@ -501,62 +575,66 @@
         .cp-apply:hover { background:#0a2a44; }
         .cp-save { background:#0e8f8a; color:white; }
         .cp-save:hover { background:#0a6e6a; }
-        .cp-close { background:#eee; color:#666; }
-        .cp-close:hover { background:#ddd; }
-        .cp-check-row { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#0a2a44; margin-bottom:12px; }
+        .cp-close { background:var(--ui-surface-3); color:var(--ui-text-2); }
+        .cp-close:hover { background:var(--ui-border-2); }
+        .cp-check-row { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--ui-text); margin-bottom:12px; }
         .cp-check-row input { width:18px; height:18px; accent-color:#1a5a8a; }
         /* ===== واجهة التصنيف (Symbology) ===== */
-        .cp-sym { margin-top:6px; border-top:2px dashed #e3ecf4; padding-top:12px; }
-        .cp-sym-head { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; color:#0a2a44; margin-bottom:10px; }
-        .cp-select { width:100%; height:34px; border:1.5px solid #d5e0ea; border-radius:8px; padding:0 8px; font-size:13px; font-family:inherit; background:white; color:#0a2a44; cursor:pointer; }
-        .cp-select:focus { outline:none; border-color:#1a5a8a; }
+        .cp-sym { margin-top:6px; border-top:2px dashed var(--ui-border); padding-top:12px; }
+        .cp-sym-head { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; color:var(--ui-text); margin-bottom:10px; }
+        .cp-select { width:100%; height:34px; border:1.5px solid var(--ui-border); border-radius:8px; padding:0 8px; font-size:13px; font-family:inherit; background:var(--ui-surface); color:var(--ui-text); cursor:pointer; }
+        .cp-select:focus { outline:none; border-color:var(--ui-link); }
         .cp-sym-modes { display:flex; gap:6px; flex-wrap:wrap; }
-        .cp-sym-modes .sym-mode { flex:1; min-width:70px; padding:7px 6px; border:1.5px solid #d5e0ea; background:white; color:#666; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:0.15s; }
-        .cp-sym-modes .sym-mode.on { background:#1a5a8a; border-color:#1a5a8a; color:white; }
-        .sym-empty { font-size:12px; color:#888; background:#f7fafc; border:1px dashed #d5e0ea; border-radius:8px; padding:10px; margin-top:8px; }
-        .sym-legend-title { font-size:12px; font-weight:800; color:#0a2a44; margin:6px 0 6px; }
-        .sym-legend-item { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12.5px; color:#333; }
+        .cp-sym-modes .sym-mode { flex:1; min-width:70px; padding:7px 6px; border:1.5px solid var(--ui-border); background:var(--ui-surface); color:var(--ui-text-2); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; transition:0.15s; }
+        .cp-sym-modes .sym-mode.on { background:#1a5a8a; border-color:var(--ui-link); color:white; }
+        .sym-empty { font-size:12px; color:var(--ui-text-2); background:var(--ui-surface-2); border:1px dashed var(--ui-border); border-radius:8px; padding:10px; margin-top:8px; }
+        .sym-legend-title { font-size:12px; font-weight:800; color:var(--ui-text); margin:6px 0 6px; }
+        .sym-legend-item { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12.5px; color:var(--ui-text); }
         .sym-swatch { width:16px; height:16px; border-radius:4px; border:1px solid rgba(0,0,0,0.15); flex:0 0 auto; }
         .sym-label { flex:1; }
-        .sym-count { color:#999; font-size:11px; }
+        .sym-count { color:var(--ui-text-2); font-size:11px; }
         /* ===== منتقي الشكل (Symbol Picker) ===== */
-        .cp-shape { margin-top:10px; border-top:2px dashed #d8e3ee; padding-top:12px; }
+        .cp-shape { margin-top:10px; border-top:2px dashed var(--ui-border); padding-top:12px; }
         .cp-icons { display:flex; flex-wrap:wrap; gap:6px; }
-        .cp-icon { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:1.5px solid #d5e0ea; border-radius:8px; cursor:pointer; background:white; transition:0.15s; color:#333; }
-        .cp-icon:hover { border-color:#1a5a8a; transform:scale(1.08); }
-        .cp-icon.sel { border-color:#1a5a8a; background:#eaf2fb; box-shadow:0 0 0 2px #fff,0 0 0 3px #1a5a8a; }
+        .cp-icon { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--ui-border); border-radius:8px; cursor:pointer; background:var(--ui-surface); transition:0.15s; color:var(--ui-text); }
+        .cp-icon:hover { border-color:var(--ui-link); transform:scale(1.08); }
+        .cp-icon.sel { border-color:var(--ui-link); background:var(--ui-surface-2); box-shadow:0 0 0 2px #fff,0 0 0 3px #1a5a8a; }
         .gis-point-icon { background:transparent; border:none; }
-        .gis-point-icon div { text-shadow:0 1px 1px rgba(0,0,0,0.2); }
+        .gis-point-icon div { text-shadow:0 1px 1px var(--ui-shadow); }
         /* ===== شاشة تسجيل الدخول ===== */
         #loginScreen { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#0a2a44,#123a5c,#1a5a8a); }
-        #loginScreen .login-box { background:white; border-radius:18px; padding:36px 34px; width:340px; max-width:90vw; box-shadow:0 15px 50px rgba(0,0,0,0.35); animation:modalIn 0.3s ease; text-align:center; }
-        #loginScreen .login-icon { font-size:34px; background:#eef5f8; color:#1a5a8a; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
-        #loginScreen h2 { color:#0a2a44; font-size:19px; margin-bottom:4px; }
-        #loginScreen .login-sub { color:#888; font-size:12px; margin-bottom:20px; }
-        #loginScreen label { display:block; text-align:right; font-size:13px; font-weight:600; color:#333; margin-bottom:4px; margin-top:14px; }
-        #loginScreen input { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; transition:border 0.2s; }
-        #loginScreen input:focus { border-color:#1a5a8a; outline:none; }
+        #loginScreen .login-box { background:var(--ui-surface); border-radius:18px; padding:36px 34px; width:340px; max-width:90vw; box-shadow:0 15px 50px var(--ui-shadow); animation:modalIn 0.3s ease; text-align:center; }
+        #loginScreen .login-icon { font-size:34px; background:var(--ui-surface-2); color:var(--ui-link); width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; }
+        #loginScreen .login-icon.is-globe { background:transparent; box-shadow:0 8px 22px -8px rgba(10,42,68,0.45); }
+        #loginScreen .login-icon.is-globe img { width:70px; height:70px; border-radius:50%; display:block; }
+        #loginScreen h2 { color:var(--ui-text); font-size:19px; margin-bottom:4px; }
+        #loginScreen .login-sub { color:var(--ui-text-2); font-size:12px; margin-bottom:20px; }
+        #loginScreen label { display:block; text-align:right; font-size:13px; font-weight:600; color:var(--ui-text); margin-bottom:4px; margin-top:14px; }
+        #loginScreen input { width:100%; padding:10px 12px; border:1px solid var(--ui-border-2); border-radius:8px; font-size:14px; font-family:inherit; transition:border 0.2s; }
+        #loginScreen input:focus { border-color:var(--ui-link); outline:none; }
         #loginScreen .login-btn { width:100%; margin-top:20px; padding:11px; background:linear-gradient(135deg,#0a2a44,#1a5a8a); color:white; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.25s; font-family:inherit; }
         #loginScreen .login-btn:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(10,42,68,0.32); }
-        #loginScreen .login-error { color:#c0392b; font-size:12px; margin-top:12px; min-height:14px; font-weight:600; }
+        #loginScreen .login-error { color:var(--ui-danger); font-size:12px; margin-top:12px; min-height:14px; font-weight:600; }
         #appRoot { display:none; flex-direction:column; height:var(--vh); width:100%; }
 
         /* ============================================================
            Enterprise Dark Glassmorphic Theme · Floating Top-Left Panel
            ============================================================ */
         :root {
-            --panel-bg:rgba(15,23,42,.82);
-            --card-bg:#1e293b;
-            --card-brd:#334155;
-            --accent:#0284c7;
-            --accent-2:#10b981;
-            --txt:#e2e8f0;
-            --txt-dim:#94a3b8;
+            --panel-bg:rgba(6,34,58,.90);
+            --card-bg:#082a45;
+            --card-brd:#123f5d;
+            --accent:#14b8ae;
+            --accent-2:#38bdf8;
+            --txt:#e9f2f9;
+            --txt-dim:#8ba8bd;
         }
         body.theme-light {
-            --panel-bg:rgba(255,255,255,.90);
+            --panel-bg:rgba(255,255,255,.92);
             --card-bg:#f1f5f9;
             --card-brd:#cbd5e1;
+            --accent:#0e8f8a;
+            --accent-2:#0ea5e9;
             --txt:#0f172a;
             --txt-dim:#475569;
         }
@@ -572,7 +650,7 @@
             -webkit-backdrop-filter:blur(12px) saturate(150%);
             border:1px solid var(--card-brd);
             border-radius:16px;
-            box-shadow:0 18px 50px rgba(0,0,0,.45);
+            box-shadow:0 18px 50px var(--ui-shadow);
             color:var(--txt);
             z-index:1500;
             display:flex; flex-direction:column; overflow:hidden;
@@ -586,13 +664,13 @@
             display:flex; flex-direction:column; gap:6px; padding:8px;
             background:var(--panel-bg); backdrop-filter:blur(12px) saturate(150%);
             -webkit-backdrop-filter:blur(12px) saturate(150%);
-            border:1px solid var(--card-brd); border-radius:14px; box-shadow:0 12px 34px rgba(0,0,0,.45);
+            border:1px solid var(--card-brd); border-radius:14px; box-shadow:0 12px 34px var(--ui-shadow);
             transition:opacity .22s, transform .22s;
         }
         #sideDock.hidden { opacity:0; pointer-events:none; transform:translateX(-14px); }
         #sideDock button { width:40px; height:40px; border-radius:11px; border:1px solid transparent;
             background:rgba(255,255,255,.05); color:var(--txt-dim); font-size:16px; cursor:pointer; transition:.18s; overflow:visible; }
-        #sideDock button:hover { background:rgba(2,132,199,.28); color:#fff; }
+        #sideDock button:hover { background:rgba(20,184,174,.28); color:#fff; }
         #sideDock button.on { background:var(--accent); color:#fff; }
 
         /* ===== رأس اللوحة ===== */
@@ -613,10 +691,10 @@
             border-bottom:2px solid transparent; transition:.18s; display:flex; flex-direction:column; align-items:center; gap:4px; }
         .sidebar .tabs button i { font-size:14px; }
         .sidebar .tabs button:hover { color:var(--txt); background:rgba(255,255,255,.05); }
-        .sidebar .tabs button.active { color:#fff; background:rgba(2,132,199,.16); border-bottom-color:var(--accent); }
+        .sidebar .tabs button.active { color:#fff; background:rgba(20,184,174,.16); border-bottom-color:var(--accent); }
         .sidebar .tabs button.tbp-export { color:#7dd3fc; }
         .sidebar .tabs button.tbp-export:hover { background:rgba(16,185,129,.14); color:#a7f3d0; }
-        .sidebar .tabs button.tbp-export.active { color:#fff; background:linear-gradient(180deg,rgba(16,185,129,.30),rgba(2,132,199,.20)); border-bottom-color:#10b981; box-shadow:inset 0 0 0 1px rgba(16,185,129,.35),0 6px 16px rgba(16,185,129,.18); }
+        .sidebar .tabs button.tbp-export.active { color:#fff; background:linear-gradient(180deg,rgba(16,185,129,.30),rgba(20,184,174,.20)); border-bottom-color:var(--ui-ok); box-shadow:inset 0 0 0 1px rgba(16,185,129,.35),0 6px 16px rgba(16,185,129,.18); }
 
         /* ===== المحتوى ===== */
         .sidebar .content { flex:1; overflow-y:auto; overflow-x:hidden; padding:12px; background:transparent; color:var(--txt); min-width:0; }
@@ -635,7 +713,7 @@
             background:var(--card-bg); border:1px solid var(--card-brd); color:var(--txt);
             border-radius:8px; font-family:inherit; width:100%; }
         .sidebar input:focus, .sidebar textarea:focus, .sidebar select:focus { border-color:var(--accent); outline:none; }
-        .sidebar input::placeholder, .sidebar textarea::placeholder { color:#64748b; }
+        .sidebar input::placeholder, .sidebar textarea::placeholder { color:var(--ui-text-3); }
         .sidebar select option { background:#0f172a; color:#e2e8f0; }
         .sidebar label { color:var(--txt-dim); }
 
@@ -650,29 +728,29 @@
         .sidebar .draw-style .ds-val { color:var(--accent-2); }
         .sidebar .draw-style input[type=range] { accent-color:var(--accent-2); }
         .sidebar .draw-style input[type=color] { background:var(--card-bg); border-color:var(--card-brd); }
-        .sidebar .coord-hint { background:rgba(2,132,199,.10); border:1px dashed rgba(2,132,199,.5); color:#bae6fd; }
-        .sidebar .coord-tool-btn { background:linear-gradient(135deg,#0e7490,#0891b2) !important; border-color:#0e7490 !important; color:#fff !important; }
-        .sidebar .attr-tool-btn { background:linear-gradient(135deg,#0369a1,#0284c7) !important; border-color:#0369a1 !important; color:#fff !important; }
+        .sidebar .coord-hint { background:rgba(20,184,174,.10); border:1px dashed rgba(20,184,174,.5); color:#bae6fd; }
+        .sidebar .coord-tool-btn { background:linear-gradient(135deg,#0e7490,#0891b2) !important; border-color:var(--ui-ok) !important; color:#fff !important; }
+        .sidebar .attr-tool-btn { background:linear-gradient(135deg,#0369a1,#0284c7) !important; border-color:var(--ui-link) !important; color:#fff !important; }
 
         /* ===== قوائم المواقع ===== */
         .sidebar .location-item:hover, .sidebar .file-item:hover { background:rgba(255,255,255,.05); }
-        .sidebar .location-item.active, .sidebar .file-item.active { background:rgba(2,132,199,.20); border-color:var(--accent); }
+        .sidebar .location-item.active, .sidebar .file-item.active { background:rgba(20,184,174,.20); border-color:var(--accent); }
         .sidebar .location-item .info .name, .sidebar .file-item .info .name { color:var(--txt); }
         .sidebar .location-item .info .desc, .sidebar .file-item .info .desc { color:var(--txt-dim); }
-        .sidebar .location-item .icon, .sidebar .file-item .icon { background:rgba(2,132,199,.18); color:#7dd3fc; }
+        .sidebar .location-item .icon, .sidebar .file-item .icon { background:rgba(20,184,174,.18); color:#7dd3fc; }
         .sidebar .location-item .actions button, .sidebar .file-item .actions button { color:var(--txt-dim); }
-        .sidebar .location-item .actions .delete-loc:hover, .sidebar .file-item .actions .delete-btn:hover { background:rgba(220,38,38,.22); color:#fca5a5; }
+        .sidebar .location-item .actions .delete-loc:hover, .sidebar .file-item .actions .delete-btn:hover { background:rgba(220,38,38,.22); color:var(--ui-danger); }
 
         /* ===== منطقة الرفع (داخل تبويب الملفات) ===== */
         .sidebar .upload-area { background:transparent; border:none; padding:0; }
         .sidebar .upload-area .upload-btn { background:linear-gradient(135deg,#0369a1,#0284c7); }
-        .sidebar .upload-area .upload-btn:hover { box-shadow:0 6px 18px rgba(2,132,199,.35); }
+        .sidebar .upload-area .upload-btn:hover { box-shadow:0 6px 18px rgba(20,184,174,.35); }
         .sidebar .upload-hint { color:var(--txt-dim); }
-        .sidebar .upload-area.dragover { outline:2px dashed var(--accent); outline-offset:-4px; border-radius:12px; background:rgba(2,132,199,.14); }
+        .sidebar .upload-area.dragover { outline:2px dashed var(--accent); outline-offset:-4px; border-radius:12px; background:rgba(20,184,174,.14); }
         .sidebar .save-row .save-btn { background:linear-gradient(135deg,#0284c7,#10b981); }
-        .sidebar .save-row .save-btn:hover { box-shadow:0 6px 16px rgba(2,132,199,.35); }
+        .sidebar .save-row .save-btn:hover { box-shadow:0 6px 16px rgba(20,184,174,.35); }
         .sidebar .save-row .export-btn { background:var(--card-bg); color:var(--txt); border:1px solid var(--card-brd); }
-        .sidebar .save-row .export-btn:hover { background:rgba(2,132,199,.22); border-color:var(--accent); color:#fff; }
+        .sidebar .save-row .export-btn:hover { background:rgba(20,184,174,.22); border-color:var(--accent); color:#fff; }
 
         /* ===== لوحة التحليلات (Dashboard) ===== */
         .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
@@ -700,8 +778,8 @@
         .set-btn { width:100%; padding:10px; border:1px solid var(--card-brd); background:rgba(255,255,255,.05);
             color:var(--txt); border-radius:9px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
             display:flex; align-items:center; justify-content:center; gap:7px; transition:.18s; margin-top:6px; }
-        .set-btn:hover { background:rgba(2,132,199,.22); border-color:var(--accent); }
-        .set-btn.danger { color:#fca5a5; border-color:#7f1d1d; background:rgba(220,38,38,.10); }
+        .set-btn:hover { background:rgba(20,184,174,.22); border-color:var(--accent); }
+        .set-btn.danger { color:var(--ui-danger); border-color:var(--ui-danger); background:rgba(220,38,38,.10); }
         .set-btn.danger:hover { background:rgba(220,38,38,.24); }
         .set-note { font-size:11px; color:var(--txt-dim); line-height:1.7; margin-top:8px; }
 
@@ -709,14 +787,14 @@
         .switch { position:relative; width:44px; height:24px; flex-shrink:0; display:inline-block; }
         .switch input { opacity:0; width:0; height:0; }
         .switch .slider { position:absolute; inset:0; background:#334155; border-radius:20px; transition:.25s; cursor:pointer; }
-        .switch .slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.25s; }
+        .switch .slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--ui-surface); border-radius:50%; transition:.25s; }
         .switch input:checked + .slider { background:var(--accent-2); }
         .switch input:checked + .slider::before { transform:translateX(20px); }
 
         /* ===== تباين الوضع الفاتح ===== */
-        body.theme-light .sidebar .tabs button.active { color:#0f172a; }
+        body.theme-light .sidebar .tabs button.active { color:var(--ui-text); }
         body.theme-light .side-head { background:rgba(15,23,42,.03); }
-        body.theme-light .sidebar .coord-hint { color:#075985; }
+        body.theme-light .sidebar .coord-hint { color:var(--ui-link); }
         body.theme-light .sidebar .draw-tool-btn.active,
         body.theme-light .sidebar .upload-area .upload-btn,
         body.theme-light .sidebar .save-row .save-btn,
@@ -772,13 +850,13 @@
         #tab-tools .tab-header:first-child { margin-top:0; }
         #tab-tools .draw-tools-grid { margin-bottom:6px; }
         .tool-format-row { display:flex; align-items:center; gap:10px; margin:2px 0 10px; }
-        .tool-format-row label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--txt-dim, #64748b); white-space:nowrap; }
-        .tool-format-row label i { color:var(--accent, #0284c7); }
+        .tool-format-row label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--txt-dim, var(--ui-text-3)); white-space:nowrap; }
+        .tool-format-row label i { color:var(--accent, var(--ui-link)); }
         .tool-format-row select { flex:1; min-width:0; padding:9px 10px; border-radius:9px; border:1px solid var(--card-brd, #334155); background:var(--card-bg, #1e293b); color:var(--txt, #e2e8f0); font-size:13px; font-family:inherit; cursor:pointer; }
-        .tool-format-row select:focus { outline:none; border-color:var(--accent, #0284c7); }
+        .tool-format-row select:focus { outline:none; border-color:var(--accent, var(--ui-link)); }
         #tab-tools .save-row .save-btn { flex:1 1 auto; }
         #tab-tools .save-row .export-btn { flex:0 0 auto; padding:0 16px; }
-        #tab-tools .draw-tool-btn.active { background:#e8973a; color:#fff; border-color:#e8973a; box-shadow:0 2px 10px rgba(232,151,58,.4); }
+        #tab-tools .draw-tool-btn.active { background:#e8973a; color:#fff; border-color:var(--ui-warn); box-shadow:0 2px 10px rgba(232,151,58,.4); }
     </style>
     <link rel="stylesheet" href="js/gis-command-center.css?v=giswater" />
     <style>
@@ -886,23 +964,85 @@
             .overlay { display: none !important; }
         }
     </style>
+
+    <!-- ===== الواجهة التعريفية (تظهر قبل شاشة تسجيل الدخول) ===== -->
+    <link rel="stylesheet" href="js/gis-intro.css" />
+    <link rel="stylesheet" href="js/gis-theme.css" />
+    <link rel="stylesheet" href="js/gis-login.css" />
 </head>
 <body>
 
+<!-- ======================= الواجهة التعريفية ======================= -->
+<div id="gisIntro" role="dialog" aria-modal="true" aria-labelledby="giTitle" aria-describedby="giLead">
+    <div class="gi-wrap">
+        <div class="gi-top">
+            <div class="gi-brand">
+                <img src="icons/logo.png" alt="شعار منصة جغرافية" width="40" height="40" />
+                <div>
+                    <b>منصة جغرافية</b>
+                    <span>خرائط · بيانات · تحليل مكاني</span>
+                </div>
+            </div>
+            <button type="button" class="gi-skip" id="gisIntroSkip">تخطي <i class="fas fa-angle-left"></i></button>
+        </div>
+
+        <div class="gi-main">
+            <div class="gi-badge"><span class="gi-dot"></span> الإصدار الاحترافي · يعمل بدون إنترنت</div>
+            <h1 id="giTitle">منصة جغرافية شاملة <em>من الفكرة إلى الخريطة</em></h1>
+            <p class="gi-lead" id="giLead">خرائط وطبقات وأدوات رسم وقياس وتحليل في مكان واحد: استورد ملفاتك، اشتغل بدون إنترنت، وزامن مشاريعك سحابيًا — من الموبايل أو الكمبيوتر.</p>
+            <ul class="gi-meta">
+                <li><i class="fas fa-toolbox"></i> <b>40+</b> أداة احترافية</li>
+                <li><i class="fas fa-file-arrow-up"></i> <b>Shapefile · KML · DXF</b></li>
+                <li><i class="fas fa-wifi"></i> <b>أوفلاين</b> بالكامل</li>
+            </ul>
+            <div class="gi-cta">
+                <button type="button" class="gi-btn primary" id="gisIntroStart"><i class="fas fa-right-to-bracket"></i> ابدأ الآن · تسجيل الدخول</button>
+                <button type="button" class="gi-btn ghost" id="gisIntroInstall"><i class="fas fa-mobile-screen-button"></i> تثبيت التطبيق</button>
+            </div>
+            <ul class="gi-feats">
+                <li class="gi-feat" style="animation-delay:.22s"><i class="fas fa-layer-group"></i><b>خرائط متعددة الطبقات</b><span>أساس · صور جوية · طبقاتك الخاصة</span></li>
+                <li class="gi-feat" style="animation-delay:.29s"><i class="fas fa-file-import"></i><b>استيراد ملفاتك</b><span>Shapefile · KML · DXF · GeoJSON</span></li>
+                <li class="gi-feat" style="animation-delay:.36s"><i class="fas fa-ruler-combined"></i><b>رسم وقياس وتحليل</b><span>مساحات · أطوال · Buffer · Heatmap</span></li>
+                <li class="gi-feat" style="animation-delay:.43s"><i class="fas fa-cloud-arrow-up"></i><b>حفظ ومزامنة</b><span>مشاريعك محفوظة سحابيًا</span></li>
+            </ul>
+            <div class="gi-note"><i class="fas fa-lock"></i> الدخول متاح للحسابات المصرّح بها فقط — <a href="landing.html">تفاصيل أكثر</a></div>
+        </div>
+
+        <div class="gi-foot">
+            <span>إعداد <b>أ / أحمد محسوب</b> · قطاع المياه</span>
+            <span>تطبيق ويب تقدمي (PWA)</span>
+        </div>
+    </div>
+</div>
+<script>
+    /* إخفاء فوري (قبل أول رسم) لو سبق عرض الواجهة في نفس الجلسة */
+    (function () {
+        try {
+            if (!/[?&]intro=1/.test(location.search) && sessionStorage.getItem('gisIntroSeen') === '1') {
+                var g = document.getElementById('gisIntro');
+                if (g) { g.style.display = 'none'; }
+            }
+        } catch (e) {}
+    })();
+</script>
+
 <div id="loginScreen">
     <div class="login-box">
-        <div class="login-icon"><i class="fas fa-droplet"></i></div>
+        <div class="login-icon is-globe"><img src="icons/logo.png" alt="شعار منصة جغرافية" width="70" height="70" /></div>
         <h2>تسجيل الدخول</h2>
-        <div class="login-sub">نظام المعلومات الجغرافية · قطاع المياه</div>
-        <button type="button" class="login-btn" id="cloudEnterBtn" style="background:linear-gradient(135deg,#0284c7,#0ea5e9)"><i class="fab fa-google"></i> الدخول بحساب Google</button>
-        <div style="display:flex;align-items:center;gap:8px;margin:14px 0 2px;color:#94a3b8;font-size:11px"><span style="flex:1;height:1px;background:#334155"></span>أو بالبريد<span style="flex:1;height:1px;background:#334155"></span></div>
-        <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="username" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;margin-top:8px" />
-        <input type="password" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;margin-top:8px" />
-        <button type="button" class="login-btn" id="emailLoginBtn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
-        <button type="button" class="login-btn" id="emailRegisterBtn" style="margin-top:8px;background:transparent;color:#0a2a44;border:1px solid #cbd5e1"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button>
+        <div class="login-sub">منصة جغرافية · خرائط وتحليل مكاني</div>
+        <button type="button" class="login-btn login-btn-primary" id="cloudEnterBtn"><i class="fab fa-google"></i> الدخول بحساب Google</button>
+        <div class="login-divider"><span></span>أو بالبريد<span></span></div>
+        <input class="login-input" type="email" id="loginEmail" placeholder="البريد الإلكتروني" autocomplete="username" />
+        <input class="login-input" type="password" id="loginPass" placeholder="كلمة المرور" autocomplete="current-password" />
+        <button type="button" class="login-btn login-btn-ghost" id="emailLoginBtn"><i class="fas fa-right-to-bracket"></i> تسجيل الدخول</button>
+        <button type="button" class="login-btn login-btn-soft" id="emailRegisterBtn"><i class="fas fa-user-plus"></i> إنشاء حساب جديد</button>
         <div class="login-error" id="loginError"></div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:16px;line-height:1.7">الدخول متاح للحسابات المصرّح بها فقط — بدون حساب لا يمكن فتح التطبيق.<br>سجّل الدخول بحساب Google أو بالبريد لحفظ ومزامنة مشاريعك سحابيًا.</div>
-        <div style="margin-top:12px"><a href="landing.html" style="color:#0284c7;font-weight:700;font-size:12.5px;text-decoration:none"><i class="fas fa-circle-info"></i> تعرّف على مميزات التطبيق</a></div>
+        <div class="login-note">الدخول متاح للحسابات المصرّح بها فقط — بدون حساب لا يمكن فتح التطبيق.<br>سجّل الدخول بحساب Google أو بالبريد لحفظ ومزامنة مشاريعك سحابيًا.</div>
+        <div class="login-links">
+            <a href="landing.html"><i class="fas fa-circle-info"></i> مميزات التطبيق</a>
+            <a href="#" onclick="if(window.GisIntro){GisIntro.show();}return false;"><i class="fas fa-house"></i> الواجهة التعريفية</a>
+        </div>
     </div>
 </div>
 </div>
@@ -910,17 +1050,20 @@
 <div id="appRoot">
 <header class="header">
     <div class="logo">
-        <img class="icon" src="icons/logo.svg" alt="شعار التطبيق" />
+        <img class="icon" src="icons/logo.png" alt="شعار منصة جغرافية" />
         <div>
-            <div class="title">نظام المعلومات الجغرافية</div>
-            <div class="subtitle">قطاع المياه · شبكات التوزيع والصرف</div>
+            <div class="title">منصة جغرافية</div>
+            <div class="subtitle">خرائط · بيانات · تحليل مكاني</div>
         </div>
     </div>
     <div class="status" id="statusIndicator">
         <span class="dot"></span>
         <span id="statusText">اعداد: أ / أحمد محسوب</span>
     </div>
-    <button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة" title="القائمة"><i class="fas fa-bars"></i></button>
+    <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="التبديل إلى الوضع النهاري" title="الوضع النهاري" aria-pressed="true"><i class="fas fa-sun"></i></button>
+        <button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة" title="القائمة"><i class="fas fa-bars"></i></button>
+    </div>
 </header>
 
 <div class="app">
@@ -1188,7 +1331,7 @@
 <!-- نافذة إضافة موقع -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-        <h3><i class="fas fa-plus-circle" style="color:#1a5a8a;"></i> إضافة موقع جديد</h3>
+        <h3><i class="fas fa-plus-circle" style="color:var(--ui-link);"></i> إضافة موقع جديد</h3>
         <label>اسم الموقع</label>
         <input type="text" id="locName" placeholder="مثال: محطة ضخ جديدة" />
         <label>الوصف</label>
@@ -1207,13 +1350,13 @@
 <!-- نافذة رفع ملف -->
 <div class="modal-overlay" id="uploadModal">
     <div class="modal">
-        <h3><i class="fas fa-cloud-upload-alt" style="color:#1a5a8a;"></i> رفع ملف جديد</h3>
+        <h3><i class="fas fa-cloud-upload-alt" style="color:var(--ui-link);"></i> رفع ملف جديد</h3>
         <label>اسم الملف</label>
         <input type="text" id="uploadFileName" placeholder="مثال: شبكة مياه بغداد" />
         <label>الوصف (اختياري)</label>
         <textarea id="uploadFileDesc" placeholder="وصف الملف"></textarea>
-        <div style="margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;border:2px dashed #1a5a8a;text-align:center;">
-            <i class="fas fa-file" style="font-size:24px;color:#1a5a8a;"></i>
+        <div style="margin-top:12px;padding:12px;background:var(--ui-surface-2);border-radius:8px;border:2px dashed var(--ui-link);text-align:center;">
+            <i class="fas fa-file" style="font-size:24px;color:var(--ui-link);"></i>
             <div id="uploadFileInfo">لم يتم اختيار ملف</div>
         </div>
         <div class="modal-actions">
@@ -1226,8 +1369,8 @@
 <!-- نافذة تنبيه صيغة DWG غير المدعومة -->
 <div class="modal-overlay" id="dwgNoticeModal">
     <div class="modal">
-        <h3><i class="fas fa-triangle-exclamation" style="color:#f59e0b;"></i> صيغة DWG غير مدعومة</h3>
-        <p style="color:#475569;line-height:1.9;font-size:13.5px;">
+        <h3><i class="fas fa-triangle-exclamation" style="color:var(--ui-warn);"></i> صيغة DWG غير مدعومة</h3>
+        <p style="color:var(--ui-text);line-height:1.9;font-size:13.5px;">
             ملفات <b>DWG</b> ملفات ثنائية مغلقة ولا يمكن قراءتها مباشرة.<br>
             يُرجى حفظ الملف بصيغة <b>DXF</b> من أوتوكاد
             (<span dir="ltr">Save As &rarr; DXF</span>) أو رفعه كمضغوط
@@ -1242,7 +1385,7 @@
 <!-- نافذة التصدير المتقدم: المصدر + الصيغة + اسم الملف -->
 <div class="modal-overlay" id="exportModal">
     <div class="modal" style="max-width:440px;">
-        <h3><i class="fas fa-file-export" style="color:#1a5a8a;"></i> تصدير البيانات المكانية</h3>
+        <h3><i class="fas fa-file-export" style="color:var(--ui-link);"></i> تصدير البيانات المكانية</h3>
 
         <label>المصدر (Source)</label>
         <select id="expSource">
@@ -1267,7 +1410,7 @@
         <label>اسم الملف</label>
         <input type="text" id="expName" placeholder="water-gis-export" />
 
-        <div id="expSummary" style="margin-top:12px;padding:10px 12px;border-radius:8px;background:#f1f7fb;border:1px solid #d7e3ee;color:#1a5a8a;font-size:12.5px;font-weight:600;">
+        <div id="expSummary" style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--ui-surface-2);border:1px solid var(--ui-border);color:var(--ui-link);font-size:12.5px;font-weight:600;">
             جارٍ حساب عدد المعالم...
         </div>
 
@@ -1281,7 +1424,7 @@
 <!-- نافذة تعديل خصائص العنصر المرسوم (اختيارية) -->
 <div class="modal-overlay" id="featureNameModal">
     <div class="modal">
-        <h3><i class="fas fa-pen" style="color:#0e8f8a;"></i> Edit Feature Attributes</h3>
+        <h3><i class="fas fa-pen" style="color:var(--ui-ok);"></i> Edit Feature Attributes</h3>
         <label>Attribute Field: Name</label>
         <input type="text" id="fnName" placeholder="e.g. Main Line" maxlength="60" />
         <label>Description (optional)</label>
@@ -1328,7 +1471,7 @@
 <!-- ===== نافذة إضافة عمود جديد للطبقة ===== -->
 <div class="modal-overlay" id="addColModal">
     <div class="modal">
-        <h3><i class="fas fa-table-columns" style="color:#0e8f8a;"></i> Add Column</h3>
+        <h3><i class="fas fa-table-columns" style="color:var(--ui-ok);"></i> Add Column</h3>
         <label>Column Name</label>
         <input type="text" id="acName" placeholder="e.g. Material" maxlength="60" />
         <label>Data Type</label>
@@ -1869,7 +2012,7 @@
             const sz = cf.size || 26;
             cf.layer.setIcon(L.divIcon({ html: `<i class="fas fa-map-pin" style="color:${escapeHtml(col)};font-size:${sz}px;${opacity < 1 ? 'opacity:' + opacity + ';' : ''}"></i>`, className: '', iconSize: [sz, sz], iconAnchor: [sz / 2, sz] }));
         } else if (cf.kind === 'نص' && cf.layer.setIcon) {
-            cf.layer.setIcon(L.divIcon({ html: `<div style="background:rgba(255,255,255,.95);border:1.5px solid ${escapeHtml(col)};border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:#0a2a44;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);transform:translate(-50%,-100%);${opacity < 1 ? 'opacity:' + opacity + ';' : ''}">${escapeHtml(cf.name)}</div>`, className: '', iconSize: null }));
+            cf.layer.setIcon(L.divIcon({ html: `<div style="background:var(--ui-glass);border:1.5px solid ${escapeHtml(col)};border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:var(--ui-text);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);transform:translate(-50%,-100%);${opacity < 1 ? 'opacity:' + opacity + ';' : ''}">${escapeHtml(cf.name)}</div>`, className: '', iconSize: null }));
         } else if (cf.layer.setStyle) {
             const fill = cf.fillColor || col;
             cf.layer.setStyle({ color: col, fillColor: fill, weight: weight, opacity: opacity, fillOpacity: (cf.kind === 'خط' ? 0 : (cf.fillOpacity != null ? cf.fillOpacity : 0.4)) });
@@ -2017,7 +2160,7 @@
         const name = defaultDrawName(kindLabel);
         if (kindLabel === 'نص') {
             const marker = L.marker(latlng, {
-                icon: L.divIcon({ html: `<div style="background:rgba(255,255,255,0.95);border:1.5px solid #e8973a;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:#0a2a44;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);transform:translate(-50%,-100%);">${escapeHtml(name)}</div>`, className: '', iconSize: null })
+                icon: L.divIcon({ html: `<div style="background:var(--ui-glass);border:1.5px solid var(--ui-warn);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:var(--ui-text);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);transform:translate(-50%,-100%);">${escapeHtml(name)}</div>`, className: '', iconSize: null })
             });
             feature = { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [latlng.lng, latlng.lat] } };
             layer = marker;
@@ -2042,7 +2185,7 @@
         fnName.value = cf.name || '';
         fnDesc.value = cf.desc || '';
         const h = document.querySelector('#featureNameModal h3');
-        if (h) h.innerHTML = '<i class="fas fa-pen" style="color:#0e8f8a;"></i> Edit Feature Attributes';
+        if (h) h.innerHTML = '<i class="fas fa-pen" style="color:var(--ui-ok);"></i> Edit Feature Attributes';
         featureNameModal.classList.add('active');
         try { map.closePopup(); } catch (e) {}
         setTimeout(function () { try { fnName.focus(); } catch (e) {} }, 60);
@@ -2712,7 +2855,7 @@
             : `${all.length} records — coordinates in UTM (WGS84 → UTM)`;
 
         if (!list.length) {
-            wrap.innerHTML = `<div style="padding:20px;text-align:center;color:#999;">No matching results</div>`;
+            wrap.innerHTML = `<div style="padding:20px;text-align:center;color:var(--ui-text-2);">No matching results</div>`;
             window.__attrList = list;
             if (filtering) applyAttrHighlight([]); else { window.clearFeatureHighlight(); restoreAttrDimming(); }
             return;
@@ -2740,7 +2883,7 @@
                 : escapeHtml(r.name);
             const descCell = r.editable
                 ? `<input class="attr-edit" data-id="${r.id}" data-field="desc" value="${escapeHtml(r.desc)}" />`
-                : (r.desc ? escapeHtml(r.desc) : '<span style="color:#bbb;">—</span>');
+                : (r.desc ? escapeHtml(r.desc) : '<span style="color:var(--ui-text-3);">—</span>');
             const eCell = r.editable
                 ? `<input class="attr-edit attr-num" data-id="${r.id}" data-field="easting" value="${eVal}" />`
                 : `<span class="attr-ro">${eVal || '—'}</span>`;
@@ -3643,7 +3786,7 @@
         locations.forEach((loc, i) => {
             if (!isLayerVis('location', loc.id)) return;
             const marker = L.marker([loc.lat, loc.lng], {
-                icon: L.divIcon({ html: `<i class="fas fa-map-pin" style="color:${escapeHtml(loc.color || '#e63946')};font-size:28px;"></i>`, className: '', iconSize: [28,28], iconAnchor: [14,28] })
+                icon: L.divIcon({ html: `<i class="fas fa-map-pin" style="color:${escapeHtml(loc.color || 'var(--ui-danger)')};font-size:28px;"></i>`, className: '', iconSize: [28,28], iconAnchor: [14,28] })
             }).bindPopup(buildFeaturePopup({ type: 'Feature', properties: { 'الاسم': loc.name, 'الوصف': loc.desc }, geometry: { type: 'Point', coordinates: [Number(loc.lng), Number(loc.lat)] } }), { maxWidth: 340, className: 'gis-popup' });
             marker.addTo(map);
             locationMarkers[i] = marker;
@@ -3715,7 +3858,7 @@
     function openAddModal() {
         editingId = null;
         locName.value = ''; locDesc.value = ''; locLat.value = ''; locLng.value = '';
-        document.querySelector('#modalOverlay h3').innerHTML = '<i class="fas fa-plus-circle" style="color:#1a5a8a;"></i> إضافة موقع جديد';
+        document.querySelector('#modalOverlay h3').innerHTML = '<i class="fas fa-plus-circle" style="color:var(--ui-link);"></i> إضافة موقع جديد';
         document.querySelector('#modalOverlay .save-btn').textContent = 'حفظ الموقع';
         modalOverlay.classList.add('active');
     }
@@ -3723,7 +3866,7 @@
     function openEditModal(loc) {
         editingId = loc.id;
         locName.value = loc.name; locDesc.value = loc.desc; locLat.value = loc.lat; locLng.value = loc.lng;
-        document.querySelector('#modalOverlay h3').innerHTML = '<i class="fas fa-edit" style="color:#1a5a8a;"></i> تعديل الموقع';
+        document.querySelector('#modalOverlay h3').innerHTML = '<i class="fas fa-edit" style="color:var(--ui-link);"></i> تعديل الموقع';
         document.querySelector('#modalOverlay .save-btn').textContent = 'تحديث الموقع';
         modalOverlay.classList.add('active');
     }
@@ -3779,7 +3922,7 @@
             pendingFile = chosen;
             document.getElementById('uploadFileName').value = pendingFile.name.replace(/\.[^.]+$/, '');
             document.getElementById('uploadFileDesc').value = '';
-            document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:#2a9d8f;"></i> ${pendingFile.name}`;
+            document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:var(--ui-ok);"></i> ${pendingFile.name}`;
             document.getElementById('uploadModal').classList.add('active');
         }
         this.value = '';
@@ -3995,14 +4138,14 @@
     });
     uploadArea.addEventListener('drop', function(e) {
         const files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files[0]) { pendingFile = files[0]; document.getElementById('uploadFileName').value = pendingFile.name.replace(/\.[^.]+$/, ''); document.getElementById('uploadFileDesc').value = ''; document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:#2a9d8f;"></i> ${pendingFile.name}`; document.getElementById('uploadModal').classList.add('active'); }
+        if (files && files[0]) { pendingFile = files[0]; document.getElementById('uploadFileName').value = pendingFile.name.replace(/\.[^.]+$/, ''); document.getElementById('uploadFileDesc').value = ''; document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:var(--ui-ok);"></i> ${pendingFile.name}`; document.getElementById('uploadModal').classList.add('active'); }
     });
 
     const mapWrapperEl = document.querySelector('.map-wrapper');
     ['dragenter','dragover','drop'].forEach(evt => mapWrapperEl.addEventListener(evt, function(e) { e.preventDefault(); }));
     mapWrapperEl.addEventListener('drop', function(e) {
         const files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files[0]) { pendingFile = files[0]; document.getElementById('uploadFileName').value = pendingFile.name.replace(/\.[^.]+$/, ''); document.getElementById('uploadFileDesc').value = ''; document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:#2a9d8f;"></i> ${pendingFile.name}`; document.getElementById('uploadModal').classList.add('active'); }
+        if (files && files[0]) { pendingFile = files[0]; document.getElementById('uploadFileName').value = pendingFile.name.replace(/\.[^.]+$/, ''); document.getElementById('uploadFileDesc').value = ''; document.getElementById('uploadFileInfo').innerHTML = `<i class="fas fa-check-circle" style="color:var(--ui-ok);"></i> ${pendingFile.name}`; document.getElementById('uploadModal').classList.add('active'); }
     });
 
     // ================================================================
@@ -4383,7 +4526,7 @@
     function buildShapePickerHTML(name, gtype) {
         const sh = getShape(name, gtype);
         let html = `<div class="cp-shape">
-            <div class="cp-sym-head"><i class="fas fa-shapes" style="color:#1a5a8a;"></i> الشكل (Symbol) — تحكم كامل</div>`;
+            <div class="cp-sym-head"><i class="fas fa-shapes" style="color:var(--ui-link);"></i> الشكل (Symbol) — تحكم كامل</div>`;
 
         if (gtype === 'point') {
             // مكتبة أيقونات النقطة
@@ -4493,7 +4636,7 @@
                 <div class="cp-row"><label>Point Size <span class="cp-value" id="cpRadiusVal">${st.radius||9}</span> px</label>
                 <input type="range" class="cp-range" min="3" max="30" value="${st.radius||9}" oninput="document.getElementById('cpRadiusVal').textContent=this.value; window.changeItemRadius('file',${id},this.value,'point')" /></div>` : '';
             panel.innerHTML = `
-                <h3><i class="fas fa-sliders-h" style="color:#0e8f8a;"></i> Layer Styling</h3>
+                <h3><i class="fas fa-sliders-h" style="color:var(--ui-ok);"></i> Layer Styling</h3>
                 <div class="cp-desc">${escapeHtml(file.name)} — ${typeLabels[tKey]||''}</div>
                 <div class="cp-row"><label>Color</label>
                     <div class="cp-colors">${colorsHtml}</div>
@@ -4504,7 +4647,7 @@
                     <input type="range" class="cp-range" min="0" max="1" step="0.05" value="${st.opacity!==undefined?st.opacity:1}" oninput="document.getElementById('cpOVal').textContent=Math.round(this.value*100)+'%'; window.changeItemOpacity('file',${id},this.value,'${tKey}');" /></div>
                 ${sizeRow}
                 <div class="cp-sym">
-                    <div class="cp-sym-head"><i class="fas fa-palette" style="color:#0e8f8a;"></i> Symbology — ArcGIS style</div>
+                    <div class="cp-sym-head"><i class="fas fa-palette" style="color:var(--ui-ok);"></i> Symbology — ArcGIS style</div>
                     <div class="cp-row"><label>Field</label>
                         <select class="cp-select" id="symField" onchange="window.symFieldChange('${file.name}','${tKey}')">
                             <option value="">Select a classification field...</option>
@@ -4540,7 +4683,7 @@
                 <div class="cp-row"><label>Size <span class="cp-value" id="cpSVal">${cf.size||26}</span> px</label>
                 <input type="range" class="cp-range" min="12" max="60" value="${cf.size||26}" oninput="document.getElementById('cpSVal').textContent=this.value; window.changeItemRadius('custom',${id},this.value,'point');" /></div>` : '';
             panel.innerHTML = `
-                <h3><i class="fas fa-sliders-h" style="color:#0e8f8a;"></i> Feature Styling</h3>
+                <h3><i class="fas fa-sliders-h" style="color:var(--ui-ok);"></i> Feature Styling</h3>
                 <div class="cp-desc">${escapeHtml(cf.name)} — ${escapeHtml(cf.desc || cf.kind)}</div>
                 <div class="cp-row"><label>Color</label><div class="cp-colors">${colorsHtml}</div>
                     <input type="color" class="cp-input" value="${col}" onchange="window.changeItemColor('custom',${id},this.value)" /></div>
@@ -4564,7 +4707,7 @@
                 colorsHtml += `<div class="cp-color ${c.toLowerCase()===col.toLowerCase()?'sel':''}" style="background:${c};" onclick="this.parentNode.querySelectorAll('.cp-color').forEach(x=>x.classList.remove('sel')); this.classList.add('sel'); window.changeItemColor('location',${id},'${c}')"></div>`;
             });
             panel.innerHTML = `
-                <h3><i class="fas fa-map-pin" style="color:#e63946;"></i> Location Styling</h3>
+                <h3><i class="fas fa-map-pin" style="color:var(--ui-danger);"></i> Location Styling</h3>
                 <div class="cp-desc">${escapeHtml(loc.name)} — ${escapeHtml(loc.desc)}</div>
                 <div class="cp-row"><label>Location Color</label><div class="cp-colors">${colorsHtml}</div>
                     <input type="color" class="cp-input" value="${col}" onchange="window.changeItemColor('location',${id},this.value)" /></div>
@@ -4681,7 +4824,11 @@
             const raw = localStorage.getItem(SETTINGS_KEY);
             if (raw) Object.assign(appSettings, JSON.parse(raw));
         } catch (_) {}
-        document.body.classList.toggle('theme-light', appSettings.theme === 'light');
+        // المصدر الموحّد للثيم هو GisTheme (يضبط data-theme + body.theme-light)
+        var themeMode = window.GisTheme ? GisTheme.get() : (appSettings.theme === 'light' ? 'light' : 'dark');
+        appSettings.theme = (themeMode === 'light') ? 'light' : 'dark';
+        document.body.classList.toggle('theme-light', themeMode === 'light');
+        if (window.GisTheme) { GisTheme.apply(themeMode); }
     }
     function saveAppSettings() {
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings)); } catch (_) {}
@@ -4764,6 +4911,7 @@
             themeChk.addEventListener('change', function () {
                 appSettings.theme = this.checked ? 'dark' : 'light';
                 document.body.classList.toggle('theme-light', !this.checked);
+                if (window.GisTheme) { GisTheme.set(appSettings.theme); }
                 saveAppSettings();
             });
         }
@@ -5600,10 +5748,10 @@
                     if (cf.kind === 'نص') {
                         const coords = cf.geojson.geometry.coordinates;
                         const latlng = L.latLng(coords[1],coords[0]);
-                        layer=L.marker(latlng,{icon:L.divIcon({html:`<div style="background:rgba(255,255,255,.95);border:1.5px solid ${escapeHtml(cf.color||'#e8973a')};border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:#0a2a44;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);transform:translate(-50%,-100%);">${escapeHtml(cf.name)}</div>`,className:'',iconSize:null})});
+                        layer=L.marker(latlng,{icon:L.divIcon({html:`<div style="background:var(--ui-glass);border:1.5px solid ${escapeHtml(cf.color||'var(--ui-warn)')};border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;color:var(--ui-text);white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.15);transform:translate(-50%,-100%);">${escapeHtml(cf.name)}</div>`,className:'',iconSize:null})});
                     } else if (cf.kind === 'نقطة') {
                         const g=L.geoJSON(cf.geojson); const src=g.getLayers()[0];
-                        layer=L.marker(src.getLatLng(),{icon:L.divIcon({html:`<i class="fas fa-map-pin" style="color:${escapeHtml(cf.color||'#0e8f8a')};font-size:26px;"></i>`,className:'',iconSize:[26,26],iconAnchor:[13,26]})});
+                        layer=L.marker(src.getLatLng(),{icon:L.divIcon({html:`<i class="fas fa-map-pin" style="color:${escapeHtml(cf.color||'var(--ui-ok)')};font-size:26px;"></i>`,className:'',iconSize:[26,26],iconAnchor:[13,26]})});
                     } else {
                         layer=L.geoJSON(cf.geojson,{style:{color:cf.color||'#0e8f8a',weight:cf.weight||2.5,fillColor:cf.color||'#0e8f8a',fillOpacity:cf.kind==='خط'?0:(cf.fillOpacity ?? 0.4),opacity:cf.opacity ?? 1}}).getLayers()[0];
                     }
@@ -5693,6 +5841,7 @@
         window.__gisRefitMap = refitMap;
         try { localStorage.setItem('gisEntered', '1'); } catch (_) {}
         document.getElementById('loginScreen').style.display = 'none';
+        try { if (window.GisIntro) { window.GisIntro.hide(true); } } catch (_) {}
         document.getElementById('appRoot').style.display = 'flex';
         setTimeout(refitMap, 60);
         setTimeout(refitMap, 400);
@@ -6360,88 +6509,10 @@ const items = [
 <script src="js/gis-osm-extractor.js"></script>
 <script src="js/gis-usage.js"></script>
 
-<!-- ===== PWA: تسجيل Service Worker + زر التثبيت ===== -->
-<script>
-    (function () {
-        if (!('serviceWorker' in navigator)) return;
-
-        // لو وصل Service Worker جديد، نأخذ التحكم ونعيد التحميل مرة واحدة لمسح الكاش القديم
-        var swRefreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', function () {
-            if (swRefreshing) { location.reload(); }
-        });
-
-        window.addEventListener('load', function () {
-            navigator.serviceWorker.register('sw.js')
-                .then(function (reg) {
-                    console.log('✅ Service Worker مُسجَّل — التطبيق جاهز للعمل بدون إنترنت');
-
-                    // فحص التحديثات كل 6 ساعات
-                    setInterval(function () { reg.update(); }, 6 * 60 * 60 * 1000);
-
-                    // لو فيه نسخة جديدة جاهزة، حدّث مباشرة
-                    reg.addEventListener('updatefound', function () {
-                        var nw = reg.installing;
-                        if (!nw) return;
-                        nw.addEventListener('statechange', function () {
-                            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('🆕 تحديث جديد — جارٍ تطبيقه ومسح الكاش القديم');
-                                swRefreshing = true;
-                                try { nw.postMessage('SKIP_WAITING'); } catch (e) {}
-                                setTimeout(function () { if (swRefreshing) location.reload(); }, 800);
-                            }
-                        });
-                    });
-                })
-                .catch(function (e) { console.warn('تعذّر تسجيل Service Worker:', e); });
-        });
-
-        // زر "تثبيت التطبيق" — يظهر عند دعم المتصفح
-        var deferredPrompt = null;
-        window.addEventListener('beforeinstallprompt', function (e) {
-            e.preventDefault();
-            deferredPrompt = e;
-            var btn = document.createElement('button');
-            btn.id = 'installAppBtn';
-            btn.title = 'تثبيت التطبيق على جهازك';
-            btn.innerHTML = '<i class="fas fa-download"></i> <span class="btn-text">تثبيت</span>';
-            btn.style.cssText = 'position:fixed;bottom:16px;left:16px;z-index:9999;' +
-                'background:linear-gradient(135deg,#0a2a44,#1a5a8a);color:#fff;border:none;' +
-                'border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;' +
-                'font-family:Tajawal,sans-serif;box-shadow:0 6px 18px rgba(10,42,68,.35);' +
-                'display:flex;align-items:center;gap:6px;';
-            btn.addEventListener('click', function () {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(function (r) {
-                    if (r.outcome === 'accepted') btn.remove();
-                    deferredPrompt = null;
-                });
-            });
-            document.body.appendChild(btn);
-        });
-
-        // على iOS: لا يدعم beforeinstallprompt — نعرضinstruction
-        var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-        var standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                         window.navigator.standalone === true;
-        if (isIOS && !standalone) {
-            window.addEventListener('load', function () {
-                setTimeout(function () {
-                    var tip = document.createElement('div');
-                    tip.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;z-index:9999;' +
-                        'background:#0a2a44;color:#fff;border-radius:10px;padding:12px 14px;' +
-                        'font-size:12.5px;line-height:1.7;font-family:Tajawal,sans-serif;' +
-                        'box-shadow:0 6px 18px rgba(0,0,0,.35);';
-                    tip.innerHTML = '<b>لتثبيت التطبيق على iPhone:</b><br>' +
-                        'اضغط زر المشاركة <b>⬆︎</b> ثم اختر <b>Add to Home Screen</b> (إضافة إلى الشاشة الرئيسية).';
-                    document.body.appendChild(tip);
-                    setTimeout(function () { tip.remove(); }, 12000);
-                }, 2500);
-            });
-        }
-    })();
-</script>
+<!-- ===== PWA: تسجيل Service Worker + تثبيت التطبيق (وحدة مستقلة) ===== -->
+<script src="js/gis-pwa-install.js"></script>
+<script src="js/gis-theme.js"></script>
+<script src="js/gis-intro.js" defer></script>
 
 <script>
 (function () {

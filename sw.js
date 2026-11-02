@@ -6,7 +6,7 @@
       ويعمل بدون إنترنت عند انقطاعه.
    ================================================================ */
 
-const VERSION = 'gis-water-v45';
+const VERSION = 'gis-water-v54';
 const CACHE = VERSION + '-cache';
 
 /* ملفات التطبيق الأساسية (نخزّنها عند التثبيت) */
@@ -42,13 +42,19 @@ const CORE_ASSETS = [
     './js/gis-timeline.js',
     './js/gis-labels.js',
     './js/gis-config.js',
+    './js/gis-pwa-install.js',
+    './js/gis-intro.css',
+    './js/gis-intro.js',
+    './js/gis-theme.css',
+    './js/gis-theme.js',
+    './js/gis-login.css',
     './js/gis-supabase.js',
     './js/gis-imagery.js',
     './js/gis-export.js',
     './js/gis-osm-extractor.js',
     './js/gis-usage.js',
-    './icons/logo.svg',
-    './icons/icon.svg',
+    './icons/logo.png',
+    './icons/favicon-32.png',
     './icons/icon-192.png',
     './icons/icon-512.png',
     './icons/icon-maskable-512.png',

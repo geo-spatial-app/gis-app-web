@@ -288,7 +288,10 @@ body.gis-cc.cc-side-hidden #sideDock button[data-side="expand"] {
     background: linear-gradient(160deg, var(--accent, #0284c7), #0e7490); color: #fff;
     box-shadow: 0 6px 18px rgba(2,132,199,.4);
 }
-body.gis-cc.cc-side-hidden .sidebar { pointer-events: none; }
+/* الوضع المخفي يمنع التفاعل مع اللوحة وهي مطوية فقط.
+   مهم: لو اللوحة اتفتحت (شيلنا collapsed) لازم ترجع تستجيب،
+   وإلا بتبان مفتوحة لكن ميتة تمامًا (شكل الهنج). */
+body.gis-cc.cc-side-hidden .sidebar.collapsed { pointer-events: none; }
 
 /* ---- 7.4) تلميحات الأدوات (Tooltip) على أزرار الشريط ---- */
 body.gis-cc #sideDock button[data-side] { position: relative; }
@@ -336,5 +339,77 @@ body.gis-cc .sidebar .tab-pane { overflow-x: hidden; }
 @media (max-width: 520px) {
     body.gis-cc.cc-side-compact #sideDock { width: 58px; min-width: 58px; }
     body.gis-cc.cc-side-hidden #sideDock { width: 48px; min-width: 48px; }
+}
+
+/* ================================================================
+   Phase C — تموضع فعلي صريح: «يمين» = يمين الشاشة، «يسار» = يسار الشاشة
+   (قبل كده كانت logical properties بتقلب الجهة في RTL، فالأزرار كانت معكوسة)
+   ملاحظة: بنصفّر logical الأول وبعدين بنحدد physical، لأن في RTL
+   inset-inline-end بتتحول لـ left وبتلغي left لو جت بعدها.
+   ================================================================ */
+/* الافتراضي: اللوحة على يسار الشاشة، والشريط على يمينها */
+body.gis-cc .sidebar {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: 16px; right: auto;
+}
+body.gis-cc.cc-side-right .sidebar {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: auto; right: 16px;
+}
+body.gis-cc #sideDock {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: auto; right: 16px;
+}
+body.gis-cc.cc-side-right #sideDock {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: 16px; right: auto;
+}
+
+/* مقبض التحجيم على الحافة الداخلية للوحة (ناحية منتصف الشاشة) */
+body.gis-cc .gis-side-resize {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: auto; right: -5px;
+}
+body.gis-cc.cc-side-right .gis-side-resize {
+    inset-inline-start: auto; inset-inline-end: auto;
+    left: -5px; right: auto;
+}
+
+/* اتجاه الطي حسب جهة اللوحة */
+body.gis-cc .sidebar.collapsed {
+    transform: translateX(calc(-100% - 30px));
+    opacity: 0; pointer-events: none;
+}
+body.gis-cc.cc-side-right .sidebar.collapsed {
+    transform: translateX(calc(100% + 30px));
+    opacity: 0; pointer-events: none;
+}
+
+/* التلميح يتجه دائمًا ناحية منتصف الشاشة */
+body.gis-cc #sideDock button[data-side]::after {
+    inset-inline-start: auto;
+    inset-inline-end: calc(100% + 10px);
+}
+body.gis-cc.cc-side-right #sideDock button[data-side]::after {
+    inset-inline-start: calc(100% + 10px);
+    inset-inline-end: auto;
+}
+
+@media (max-width: 520px) {
+    body.gis-cc .sidebar,
+    body.gis-cc.cc-side-right .sidebar {
+        inset-inline-start: auto; inset-inline-end: auto;
+        left: 6px !important; right: 6px !important;
+        width: auto; max-width: none;
+    }
+    body.gis-cc #sideDock,
+    body.gis-cc.cc-side-right #sideDock {
+        inset-inline-start: auto; inset-inline-end: auto;
+        left: 6px; right: auto;
+    }
+    body.gis-cc .sidebar.collapsed,
+    body.gis-cc.cc-side-right .sidebar.collapsed {
+        transform: translateX(calc(100% + 30px));
+    }
 }
 

@@ -20,6 +20,14 @@ body,
     transition: background-color .22s ease, color .22s ease, border-color .22s ease;
 }
 
+/* اللوحة الجانبية تحتاج أيضًا حركة الطي/التموضع (transform) —
+   بدونها كان هذا الملف يلغي انتقال transform الموجود في index.html. */
+.sidebar {
+    transition: background-color .22s ease, color .22s ease, border-color .22s ease,
+                transform .32s cubic-bezier(.4,0,.2,1), opacity .26s,
+                right .32s cubic-bezier(.4,0,.2,1), left .32s cubic-bezier(.4,0,.2,1);
+}
+
 /* ---------- الخلفية الأساسية في الوضعين ---------- */
 html[data-theme="light"] body { background: var(--ui-bg); }
 html[data-theme="dark"]  body { background: var(--ui-bg); }

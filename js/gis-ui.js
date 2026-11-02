@@ -19,10 +19,10 @@
     var ICON_KEY = 'gis-icon-size';
 
     var DEFAULTS = {
-        v: 1,
+        v: 2,
         icon: { mode: 'svg', opacity: 1, mono: false, color: '' },
         dock: { order: [], hidden: [], size: 40, gap: 6, opacity: 1 },
-        sidebar: { mode: 'compact', side: 'left', width: 360, autoHide: false, collapsed: null },
+        sidebar: { mode: 'compact', side: 'right', width: 360, autoHide: false, collapsed: null },
         tabs: { order: [], hidden: [] },
         theme: { accent: '', glow: 'normal' },
         preset: 'default'
@@ -107,6 +107,17 @@
     function dockBtns() { return $$('#sideDock button[data-side]'); }
 
     /* ================= التخزين ================= */
+    /* ترحيل إعدادات الإصدار 1: أسماء جهة اللوحة كانت معكوسة في التنسيق
+       (side='left' كانت تعرض اللوحة على يمين الشاشة). نعكسها مرة واحدة
+       للحفاظ على نفس مكان اللوحة الذي اعتاد عليه المستخدم. */
+    function migrate(s) {
+        var v = parseInt(s.v, 10) || 1;
+        if (v < 2) {
+            s.sidebar.side = (s.sidebar.side === 'right') ? 'left' : 'right';
+            s.v = 2;
+        }
+        return s;
+    }
     function load() {
         var raw = null;
         try { raw = localStorage.getItem(KEY); } catch (e) {}
@@ -114,7 +125,11 @@
             try { S = merge(DEFAULTS, JSON.parse(raw)); }
             catch (e) { S = clone(DEFAULTS); }
         } else { S = clone(DEFAULTS); }
+        var before = S.v;
+        migrate(S);
         normalize(S);
+        /* نحفظ نتيجة الترحيل حتى لا تنعكس الجهة مرة أخرى في كل تحميل */
+        if (raw && S.v !== before) { save(); }
         return S;
     }
     function save() {
@@ -543,7 +558,13 @@
                     if (S.sidebar.collapsed !== c) { S.sidebar.collapsed = c; save(); }
                     /* مزامنة الوضع مع تغيّر الصنف القادم من التطبيق (setSidePanel) */
                     var want = c ? 'compact' : 'expanded';
-                    if (S.sidebar.mode === 'hidden') { return; }
+                    if (S.sidebar.mode === 'hidden') {
+                        /* اللوحة كانت مخفية واتفتحت من زر السهم/الشريط:
+                           لازم نخرج من وضع hidden فعليًا، وإلا كلاس cc-side-hidden
+                           يفضل على body واللوحة تبقى ظاهرة لكن ميتة (pointer-events:none). */
+                        if (!c) { applySideMode('expanded', true); }
+                        return;
+                    }
                     if (S.sidebar.mode !== want) {
                         S.sidebar.mode = want;
                         document.body.classList.remove('cc-side-expanded', 'cc-side-compact', 'cc-side-hidden');
@@ -922,6 +943,7 @@
                 var incoming = (data && data.settings && typeof data.settings === 'object') ? data.settings : data;
                 if (!incoming || typeof incoming !== 'object') { throw new Error('bad'); }
                 S = merge(DEFAULTS, incoming);
+                migrate(S);
                 normalize(S);
                 save();
                 apply();

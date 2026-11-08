@@ -38,25 +38,25 @@
         editing: {
             label: 'Editing · التحرير',
             desc: 'الرسم والتحرير أولًا · لوحة يسار · أيقونات أكبر',
-            tabs: ['draw', 'locations', 'modules', 'tools', 'files', 'export', 'dashboard', 'cloud', 'settings'],
+            tabs: ['draw', 'locations', 'tools', 'files', 'export', 'dashboard', 'cloud', 'settings'],
             hidden: ['dashboard'], side: 'left', width: 400, icon: 24, accent: '', glow: 'normal'
         },
         analysis: {
             label: 'Analysis · التحليل',
             desc: 'وحدات التحليل ولوحة المؤشرات أولًا · لوحة أعرض',
-            tabs: ['modules', 'dashboard', 'tools', 'draw', 'locations', 'files', 'export', 'cloud', 'settings'],
+            tabs: ['dashboard', 'tools', 'draw', 'locations', 'files', 'export', 'cloud', 'settings'],
             hidden: [], side: 'left', width: 440, icon: 22, accent: '', glow: 'strong'
         },
         water: {
             label: 'Water · شبكات التوزيع',
             desc: 'المواقع والوحدات الخاصة بشبكات المياه',
-            tabs: ['locations', 'modules', 'tools', 'draw', 'export', 'files', 'dashboard', 'cloud', 'settings'],
+            tabs: ['locations', 'tools', 'draw', 'export', 'files', 'dashboard', 'cloud', 'settings'],
             hidden: [], side: 'right', width: 380, icon: 23, accent: '#0284c7', glow: 'normal'
         },
         sewer: {
             label: 'Sewerage · الصرف الصحي',
             desc: 'الرسم والوحدات الخاصة بشبكات الصرف',
-            tabs: ['locations', 'draw', 'modules', 'tools', 'export', 'files', 'dashboard', 'cloud', 'settings'],
+            tabs: ['locations', 'draw', 'tools', 'export', 'files', 'dashboard', 'cloud', 'settings'],
             hidden: ['dashboard'], side: 'left', width: 380, icon: 23, accent: '#0e7490', glow: 'normal'
         }
     };
@@ -264,7 +264,7 @@
             var TIPS = {
                 expand: 'فتح القائمة', locations: 'المواقع', draw: 'أدوات الرسم',
                 files: 'البيانات والرفع', dashboard: 'لوحة المؤشرات', export: 'التنزيل والتصدير',
-                settings: 'الإعدادات', tools: 'الأدوات', modules: 'الوحدات', cloud: 'السحابة'
+                settings: 'الإعدادات', tools: 'الأدوات', cloud: 'السحابة'
             };
             $$('#sideDock button[data-side]').forEach(function (b) {
                 var id = b.getAttribute('data-side');

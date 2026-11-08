@@ -218,6 +218,12 @@ footer ul a:hover{color:#5eead4;}
 .foot-bottom{padding-top:22px; display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; font-size:13px;}
 .foot-bottom a{color:#5eead4; text-decoration:none;}
 @media(max-width:760px){ .foot-grid{grid-template-columns:1fr; gap:28px;} }
+
+/* ---- English (LTR) typography ---- */
+html[dir="ltr"] body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
+html[dir="ltr"] .hero h1{letter-spacing:-.6px;}
+html[dir="ltr"] .brand .b-t,
+html[dir="ltr"] .brand .b-s{letter-spacing:0;}
 </style>
 </head>
 <body>
@@ -503,6 +509,7 @@ burger.addEventListener('click', function () { links.classList.toggle('open'); }
 links.addEventListener('click', function (e) { if (e.target.tagName === 'A') links.classList.remove('open'); });
 </script>
 <script src="js/gis-pwa-install.js"></script>
+<script src="js/gis-lang.js"></script>
 <script>
 (function () {
     var b = document.getElementById('landingInstallBtn');

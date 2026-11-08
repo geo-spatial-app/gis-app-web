@@ -1244,6 +1244,13 @@
                         <label>Dark Theme</label>
                         <label class="switch"><input type="checkbox" id="setTheme" checked /><span class="slider"></span></label>
                     </div>
+                    <div class="set-row">
+                        <label>Language / اللغة</label>
+                        <select id="setLang">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="set-sec">
@@ -1509,6 +1516,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
 <!-- ===== طبقة أساس الوحدات المستقلة (Module Foundation) — تُحمَّل قبل سكربت التطبيق ===== -->
+<script src="js/gis-lang.js"></script>
 <script src="js/gis-core.js"></script>
 <script src="js/gis-icons.js"></script>
 <script src="js/gis-ui.js"></script>
@@ -4898,6 +4906,14 @@
         const unitsSel = document.getElementById('setUnits');
         const precSel = document.getElementById('setPrecision');
         const themeChk = document.getElementById('setTheme');
+        const langSel = document.getElementById('setLang');
+        if (langSel && window.GisLang) {
+            langSel.value = GisLang.get();
+            langSel.addEventListener('change', function () {
+                GisLang.set(this.value);
+                try { appSettings.lang = this.value; saveAppSettings(); } catch (_) {}
+            });
+        }
         if (unitsSel) {
             unitsSel.value = appSettings.units;
             unitsSel.addEventListener('change', function () { appSettings.units = this.value; saveAppSettings(); renderDashboard(); });

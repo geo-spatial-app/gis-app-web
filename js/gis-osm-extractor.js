@@ -209,7 +209,9 @@
             injectCss();
 
             /* ---- view state ---- */
-            var presetOpts = Object.keys(PRESETS).map(function (k) { return { value: k, label: PRESETS[k].label }; }).join('');
+            var presetOpts = Object.keys(PRESETS).map(function (k) {
+                return '<option value="' + k + '">' + PRESETS[k].label + '</option>';
+            }).join('');
 
             root.innerHTML =
                 '<div class="osm-hint" style="margin-top:0;margin-bottom:8px"><i class="fas fa-earth-africa"></i> اسحب بيانات فيكتور حقيقية لأي منطقة في العالم من OpenStreetMap (Overpass API) — مبانٍ، طرق، مياه، حدود، ومعالم — ثم صدّرها بإحداثياتها الحقيقية.</div>' +

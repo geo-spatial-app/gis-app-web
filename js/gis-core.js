@@ -177,35 +177,29 @@
     }
 
     function buildUi() {
-        if (document.getElementById('tab-modules')) { GRID = document.getElementById('gisModulesGrid'); return; }
-        var tabs = document.querySelector('.sidebar .tabs');
-        var content = document.querySelector('.sidebar .content');
-        if (!tabs || !content) { warn('لم يتم العثور على حاوية اللوحة الجانبية'); return; }
+        /* التبويبان «الأدوات» و«Tools» مدموجان في تبويب واحد (#tab-tools) */
+        if (document.getElementById('gisModulesGrid')) { GRID = document.getElementById('gisModulesGrid'); return; }
+        var host = document.getElementById('tab-tools');
+        if (!host) { warn('لم يتم العثور على تبويب الأدوات'); return; }
 
-        var btn = el('button', '', '<i class="fas fa-cubes"></i> Tools');
-        btn.setAttribute('data-tab', 'modules');
-        btn.addEventListener('click', function () { switchTo('modules'); });
-        var settingsBtn = tabs.querySelector('[data-tab="settings"]');
-        if (settingsBtn) { tabs.insertBefore(btn, settingsBtn); } else { tabs.appendChild(btn); }
-
-        var pane = el('div', 'tab-pane');
-        pane.id = 'tab-modules';
-        pane.innerHTML =
+        var section = el('div', 'gis-tools-modules');
+        section.id = 'gisToolsModules';
+        section.innerHTML =
             '<div class="tab-header"><h4><i class="fas fa-cubes"></i> GIS Tools &amp; Modules</h4></div>' +
             '<div class="gis-mod-acc-wrap" id="gisModulesGrid"></div>';
-        content.appendChild(pane);
-        GRID = pane.querySelector('#gisModulesGrid');
+        host.appendChild(section);
+        GRID = section.querySelector('#gisModulesGrid');
 
         var dock = document.getElementById('sideDock');
-        if (dock) {
+        if (dock && !dock.querySelector('[data-side="tools"]')) {
             var d = el('button');
             d.type = 'button';
-            d.setAttribute('data-side', 'modules');
+            d.setAttribute('data-side', 'tools');
             d.title = 'GIS Tools';
             d.innerHTML = '<i class="fas fa-cubes"></i>';
             d.addEventListener('click', function () {
-                if (REFS && REFS.ui && typeof REFS.ui.setSidePanel === 'function') { REFS.ui.setSidePanel(true, 'modules'); }
-                else { switchTo('modules'); }
+                if (REFS && REFS.ui && typeof REFS.ui.setSidePanel === 'function') { REFS.ui.setSidePanel(true, 'tools'); }
+                else { switchTo('tools'); }
             });
             dock.appendChild(d);
         }

@@ -4991,6 +4991,10 @@
                 const active = b.getAttribute('data-lang') === on;
                 b.classList.toggle('on', active);
                 b.setAttribute('aria-checked', active ? 'true' : 'false');
+                if (b.getAttribute('data-lang') === 'ar') {
+                    const badge = b.querySelector('.lang-badge');
+                    if (badge) { badge.textContent = (on === 'ar') ? 'ع' : 'AR'; }
+                }
             });
             if (langSwitch) { langSwitch.setAttribute('data-active', on); }
             if (langStateTxt) { langStateTxt.textContent = (on === 'ar') ? 'العربية' : 'English'; }

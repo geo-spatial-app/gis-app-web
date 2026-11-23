@@ -954,6 +954,11 @@
         ['تطبيق ويب (PWA)', 'Web App (PWA)'],
         ['منصة جغرافية — جميع الحقوق محفوظة.', 'Geo Platform — All rights reserved.'],
         ['صُنع بعناية لقطاع المياه', 'Crafted with care for the water sector'],
+        ['تحويل اللغة', 'Language Switch'],
+        ['لغة الواجهة', 'Interface language'],
+        ['اختر لغة واجهة التطبيق — تُطبَّق فورًا على كل الشاشات.', 'Choose the app interface language — applied instantly across all screens.'],
+        ['يُحفظ اختيارك على هذا الجهاز ويُطبَّق تلقائيًا في الزيارة القادمة.', 'Your choice is saved on this device and applied automatically on your next visit.'],
+        ['يُطبَّق فورًا على الواجهة كلها (النصوص والاتجاه) ويُحفظ لزياراتك القادمة.', 'Applies instantly to the whole interface (text and direction) and is saved for your next visits.'],
         ['صدّر صورة جوية عالية الدقة لمنطقة تختارها، مع إسناد جغرافي جاهز لـ QGIS / ArcGIS / AutoCAD — من المصادر المفتوحة (Esri World Imagery، Sentinel-2).', 'Export a high-resolution aerial image for a chosen area, with georeferencing ready for QGIS / ArcGIS / AutoCAD — from open sources (Esri World Imagery, Sentinel-2).'],
         ['ملاحظة: بعض المصادر (مثل Google) قد تمنع التصدير بسياسة CORS — استخدم Esri World Imagery أو Sentinel-2. الملف يُصدَّر بنظام إحداثيات Web Mercator (EPSG:3857) وهو مدعوم مباشرةً في QGIS/ArcGIS.', 'Note: some sources (such as Google) may block export due to CORS policy — use Esri World Imagery or Sentinel-2. The file is exported in Web Mercator (EPSG:3857), supported directly in QGIS/ArcGIS.']
     ];

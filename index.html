@@ -783,6 +783,58 @@
         .set-btn.danger:hover { background:rgba(220,38,38,.24); }
         .set-note { font-size:11px; color:var(--txt-dim); line-height:1.7; margin-top:8px; }
 
+        /* ===== تحويل اللغة ===== */
+        .set-sec-lang { position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(56,189,248,.34); padding:14px 14px 12px;
+            background:linear-gradient(150deg,rgba(2,132,199,.22),rgba(6,34,58,.86) 55%,rgba(13,148,136,.18));
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 30px -26px rgba(2,132,199,.95); }
+        .set-sec-lang::before { content:''; position:absolute; top:-70px; inset-inline-end:-50px; width:190px; height:190px; border-radius:50%;
+            background:radial-gradient(circle,rgba(56,189,248,.30),transparent 62%); pointer-events:none; }
+        .lang-head { position:relative; display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; }
+        .lang-ico { flex:0 0 36px; width:36px; height:36px; border-radius:11px; display:grid; place-items:center; color:#e0f2fe; font-size:15px;
+            background:linear-gradient(135deg,#0284c7,#0d9488); box-shadow:0 8px 16px -8px rgba(2,132,199,.95); }
+        .lang-head-txt { flex:1; min-width:0; }
+        .set-sec-lang .lang-head-txt h5 { display:block; margin:0; font-size:13.5px; font-weight:800; letter-spacing:.2px; color:var(--txt); }
+        .lang-head-txt p { margin:3px 0 0; font-size:10.8px; line-height:1.55; color:var(--txt-dim); }
+        .lang-state { flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:999px; white-space:nowrap;
+            font-size:10.5px; font-weight:800; color:#5eead4; background:rgba(20,184,166,.16); border:1px solid rgba(20,184,166,.42); }
+        .lang-state i { font-size:9px; }
+        .lang-switch { position:relative; display:grid; grid-template-columns:1fr 1fr; padding:4px; border-radius:12px;
+            background:rgba(2,8,23,.52); border:1px solid rgba(18,63,93,.9); }
+        .lang-thumb { position:absolute; top:4px; width:calc(50% - 6px); height:calc(100% - 8px); border-radius:9px;
+            background:linear-gradient(135deg,#0284c7,#0ea5e9); box-shadow:0 10px 20px -12px rgba(14,165,233,1);
+            transition:transform .3s cubic-bezier(.4,0,.2,1); }
+        html[dir="ltr"] .lang-thumb { left:4px; }
+        html[dir="rtl"] .lang-thumb { right:4px; }
+        .lang-switch[data-active="en"] .lang-thumb { transform:translateX(100%); }
+        html[dir="rtl"] .lang-switch[data-active="en"] .lang-thumb { transform:translateX(-100%); }
+        .lang-opt { position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:9px 8px;
+            border:0; background:transparent; border-radius:9px; color:var(--txt-dim); font-family:inherit; font-size:12.5px;
+            font-weight:800; cursor:pointer; transition:color .2s; }
+        .lang-opt:hover { color:var(--txt); }
+        .lang-opt:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; }
+        .lang-opt.on { color:#fff; }
+        .lang-badge { display:grid; place-items:center; min-width:22px; height:22px; padding:0 5px; border-radius:7px;
+            font-size:9.5px; font-weight:800; letter-spacing:.4px; background:rgba(148,163,184,.18); color:inherit; }
+        .lang-opt.on .lang-badge { background:rgba(255,255,255,.24); }
+        .lang-check { font-size:10px; opacity:0; transform:scale(.5); transition:.2s; }
+        .lang-opt.on .lang-check { opacity:1; transform:scale(1); }
+        .lang-foot { position:relative; display:flex; align-items:center; justify-content:center; gap:5px; margin-top:9px;
+            font-size:10px; line-height:1.5; text-align:center; color:var(--txt-dim); }
+        .lang-foot i { font-size:9.5px; color:#5eead4; }
+        .lang-native { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0; }
+        body.theme-light .set-sec-lang { background:linear-gradient(150deg,rgba(14,165,233,.14),rgba(255,255,255,.94) 55%,rgba(13,148,136,.12));
+            box-shadow:0 16px 30px -28px rgba(2,132,199,.9); }
+        body.theme-light .lang-switch { background:rgba(15,23,42,.05); border-color:rgba(15,23,42,.13); }
+        body.theme-light .lang-opt { color:#64748b; }
+        body.theme-light .lang-opt:hover { color:#0f172a; }
+        body.theme-light .lang-opt.on { color:#fff; }
+        body.theme-light .lang-badge { background:rgba(15,23,42,.08); }
+        body.theme-light .lang-opt.on .lang-badge { background:rgba(255,255,255,.28); }
+        body.theme-light .lang-state { color:#0f766e; background:rgba(13,148,136,.12); border-color:rgba(13,148,136,.34); }
+        body.theme-light .lang-foot i { color:#0d9488; }
+        @media(max-width:380px) { .lang-opt { font-size:11.5px; gap:5px; } .lang-head-txt p { font-size:10.2px; } }
+        @media(prefers-reduced-motion:reduce) { .lang-thumb, .lang-opt, .lang-check { transition:none; } }
+
         /* ===== مفتاح تبديل ===== */
         .switch { position:relative; width:44px; height:24px; flex-shrink:0; display:inline-block; }
         .switch input { opacity:0; width:0; height:0; }
@@ -1223,6 +1275,36 @@
                     <h4><i class="fas fa-cog"></i> Settings</h4>
                 </div>
 
+                <!-- ===== تحويل اللغة ===== -->
+                <div class="set-sec set-sec-lang">
+                    <div class="lang-head">
+                        <span class="lang-ico"><i class="fas fa-language"></i></span>
+                        <div class="lang-head-txt">
+                            <h5>تحويل اللغة</h5>
+                            <p>اختر لغة واجهة التطبيق — تُطبَّق فورًا على كل الشاشات.</p>
+                        </div>
+                        <span class="lang-state" id="langState"><i class="fas fa-circle-check"></i> <span>العربية</span></span>
+                    </div>
+                    <div class="lang-switch" role="radiogroup" aria-label="تحويل اللغة" data-active="ar">
+                        <span class="lang-thumb" aria-hidden="true"></span>
+                        <button type="button" class="lang-opt on" data-lang="ar" role="radio" aria-checked="true">
+                            <span class="lang-badge">ع</span>
+                            <span class="lang-lbl">العربية</span>
+                            <i class="fas fa-check lang-check" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="lang-opt" data-lang="en" role="radio" aria-checked="false">
+                            <span class="lang-badge">EN</span>
+                            <span class="lang-lbl">English</span>
+                            <i class="fas fa-check lang-check" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <select id="setLang" class="lang-native" tabindex="-1" aria-hidden="true">
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                    </select>
+                    <div class="lang-foot"><i class="fas fa-shield-halved"></i> يُحفظ اختيارك على هذا الجهاز ويُطبَّق تلقائيًا في الزيارة القادمة.</div>
+                </div>
+
                 <div class="set-sec">
                     <h5><i class="fas fa-sliders"></i> Display &amp; Units</h5>
                     <div class="set-row">
@@ -1243,13 +1325,6 @@
                     <div class="set-row">
                         <label>Dark Theme</label>
                         <label class="switch"><input type="checkbox" id="setTheme" checked /><span class="slider"></span></label>
-                    </div>
-                    <div class="set-row">
-                        <label>Language / اللغة</label>
-                        <select id="setLang">
-                            <option value="ar">العربية</option>
-                            <option value="en">English</option>
-                        </select>
                     </div>
                 </div>
 
@@ -4907,12 +4982,43 @@
         const precSel = document.getElementById('setPrecision');
         const themeChk = document.getElementById('setTheme');
         const langSel = document.getElementById('setLang');
+        const langSwitch = document.querySelector('.lang-switch');
+        const langStateTxt = document.querySelector('#langState span');
+        const langBtns = Array.prototype.slice.call(document.querySelectorAll('.lang-opt[data-lang]'));
+        function paintLangBtns(lang) {
+            const on = (lang === 'en') ? 'en' : 'ar';
+            langBtns.forEach(function (b) {
+                const active = b.getAttribute('data-lang') === on;
+                b.classList.toggle('on', active);
+                b.setAttribute('aria-checked', active ? 'true' : 'false');
+            });
+            if (langSwitch) { langSwitch.setAttribute('data-active', on); }
+            if (langStateTxt) { langStateTxt.textContent = (on === 'ar') ? 'العربية' : 'English'; }
+        }
         if (langSel && window.GisLang) {
             langSel.value = GisLang.get();
+            paintLangBtns(GisLang.get());
             langSel.addEventListener('change', function () {
                 GisLang.set(this.value);
+                paintLangBtns(this.value);
                 try { appSettings.lang = this.value; saveAppSettings(); } catch (_) {}
             });
+            langBtns.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    langSel.value = b.getAttribute('data-lang');
+                    langSel.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+            if (langSwitch) {
+                langSwitch.addEventListener('keydown', function (e) {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') { return; }
+                    e.preventDefault();
+                    var next = (GisLang.get() === 'ar') ? 'en' : 'ar';
+                    var target = langSwitch.querySelector('.lang-opt[data-lang="' + next + '"]');
+                    if (target) { target.click(); target.focus(); }
+                });
+            }
+            if (GisLang.onChange) { GisLang.onChange(paintLangBtns); }
         }
         if (unitsSel) {
             unitsSel.value = appSettings.units;
